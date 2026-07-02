@@ -13,13 +13,15 @@ enum Role {
 }
 
 enum OrderStatus {
-  PENDING
+  CREATED
   ASSIGNED
   PICKED_UP
   IN_TRANSIT
+  OUT_FOR_DELIVERY
   DELIVERED
-  CANCELLED
+  FAILED
   RESCHEDULED
+  CANCELLED
 }
 
 enum OrderType {
@@ -232,12 +234,14 @@ model Order {
   shippingCharge    Float
   CODCharge         Float
   totalCharge       Float
-  status            OrderStatus           @default(PENDING)
+  status            OrderStatus           @default(CREATED)
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
   trackingHistories TrackingHistory[]
   agentAssignments  AgentAssignment[]
   reschedules       Reschedule[]
+  deliveryAttempts  DeliveryAttempt[]
+  deliveryProof     DeliveryProof?
 
   @@index([status])
   @@index([customerId])
@@ -253,6 +257,8 @@ model TrackingHistory {
   newStatus      OrderStatus
   changedBy      String
   remarks        String?
+  latitude       Float?
+  longitude      Float?
   timestamp      DateTime     @default(now())
 
   @@index([orderId])
@@ -295,4 +301,30 @@ model Reschedule {
   status        RescheduleStatus @default(PENDING)
 
   @@map("reschedule")
+}
+
+model DeliveryAttempt {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  attemptNumber Int
+  reason        String
+  notes         String?
+  timestamp     DateTime @default(now())
+
+  @@map("delivery_attempt")
+}
+
+model DeliveryProof {
+  id             String   @id @default(uuid())
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipientName  String
+  otp            String?
+  signaturePath  String?
+  photoUrl       String?
+  notes          String?
+  timestamp      DateTime @default(now())
+
+  @@map("delivery_proof")
 }

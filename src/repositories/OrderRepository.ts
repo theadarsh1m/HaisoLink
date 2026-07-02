@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Prisma, OrderStatus } from "@prisma/client";
 
 export class OrderRepository {
   async findById(id: string) {
@@ -47,7 +47,7 @@ export class OrderRepository {
     });
   }
 
-  async findAll(filters?: { status?: Prisma.EnumOrderStatusFilter | "PENDING" | "ASSIGNED" | "PICKED_UP" | "IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "RESCHEDULED"; customerId?: string; assignedAgentId?: string }) {
+  async findAll(filters?: { status?: OrderStatus | Prisma.EnumOrderStatusFilter; customerId?: string; assignedAgentId?: string }) {
     return db.order.findMany({
       where: filters,
       include: {
