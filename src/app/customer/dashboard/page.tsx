@@ -98,6 +98,18 @@ export default function CustomerDashboardPage() {
                 </div>
               </div>
               <Timeline items={activeTracker} />
+              <div className="pt-4 border-t border-border/40 space-y-2 mt-6">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Assigned Courier</p>
+                <div className="flex items-center justify-between text-xs p-3 bg-secondary/10 rounded-xl border border-border/20">
+                  <div>
+                    <p className="font-bold text-foreground">Liam Miller</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Vehicle: Motorcycle (#LN-232)</p>
+                  </div>
+                  <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5 text-[10px] font-bold">
+                    Est. Pickup: 15m
+                  </Badge>
+                </div>
+              </div>
             </div>
             <div className="pt-6 mt-6 border-t border-border/40 flex items-center justify-between">
               <div className="flex items-center gap-2">

@@ -38,7 +38,7 @@ export default function RegisterPage() {
       await signUp.email({
         email: data.email,
         password: data.password,
-        name: data.name,
+        name: data.fullName,
         role: data.role,
         callbackURL: "/dashboard-redirect",
       } as Parameters<typeof signUp.email>[0], {
@@ -79,11 +79,11 @@ export default function RegisterPage() {
           <Input
             type="text"
             placeholder="John Doe"
-            {...register("name")}
+            {...register("fullName")}
             disabled={isLoading}
           />
-          {errors.name && (
-            <p className="text-xs text-destructive font-medium">{errors.name.message}</p>
+          {errors.fullName && (
+            <p className="text-xs text-destructive font-medium">{errors.fullName.message}</p>
           )}
         </div>
 

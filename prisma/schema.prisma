@@ -12,17 +12,68 @@ enum Role {
   CUSTOMER
 }
 
+enum OrderStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum OrderType {
+  STANDARD
+  EXPRESS
+}
+
+enum PaymentType {
+  PREPAID
+  COD
+}
+
+enum NotificationType {
+  ORDER_ASSIGNED
+  ORDER_STATUS_UPDATE
+  SYSTEM_ALERT
+  ZONE_WARNING
+}
+
+enum AssignmentType {
+  AUTO
+  MANUAL
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+  ON_LEAVE
+}
+
+enum RescheduleStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
-  image         String?
-  role          Role      @default(CUSTOMER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id                  String                @id @default(uuid())
+  fullName            String
+  email               String                @unique
+  phoneNumber         String?
+  role                Role                  @default(CUSTOMER)
+  profileImage        String?
+  isActive            Boolean               @default(true)
+  emailVerified       Boolean               @default(false)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+  sessions            Session[]
+  accounts            Account[]
+  customerProfile     CustomerProfile?
+  deliveryAgentProfile DeliveryAgentProfile?
+  notifications       Notification[]
 
   @@map("user")
 }
@@ -69,4 +120,179 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+model CustomerProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultAddress String
+  companyName    String?
+  GSTNumber      String?
+  orders         Order[]
+
+  @@map("customer_profile")
+}
+
+model DeliveryAgentProfile {
+  id                 String             @id @default(uuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleType        String
+  licenseNumber      String
+  currentLatitude    Float?
+  currentLongitude   Float?
+  lastLocationUpdate DateTime?
+  availabilityStatus AvailabilityStatus @default(OFFLINE)
+  zoneId             String?
+  zone               Zone?              @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  totalDeliveries    Int                @default(0)
+  averageRating      Float?
+  assignments        AgentAssignment[]
+  orders             Order[]
+
+  @@index([availabilityStatus])
+  @@index([zoneId])
+  @@map("delivery_agent_profile")
+}
+
+model Zone {
+  id                String                 @id @default(uuid())
+  name              String                 @unique
+  description       String?
+  areas             Area[]
+  agents            DeliveryAgentProfile[]
+  rateCardsAsSource RateCard[]             @relation("SourceZone")
+  rateCardsAsDest   RateCard[]             @relation("DestinationZone")
+
+  @@map("zone")
+}
+
+model Area {
+  id                String   @id @default(uuid())
+  areaName          String
+  city              String
+  state             String
+  pincode           String
+  latitude          Float
+  longitude         Float
+  zoneId            String
+  zone              Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  pickupOrders      Order[]  @relation("PickupArea")
+  destinationOrders Order[]  @relation("DestinationArea")
+
+  @@index([pincode])
+  @@index([zoneId])
+  @@map("area")
+}
+
+model RateCard {
+  id                String    @id @default(uuid())
+  sourceZoneId      String
+  sourceZone        Zone      @relation("SourceZone", fields: [sourceZoneId], references: [id], onDelete: Cascade)
+  destinationZoneId String
+  destinationZone   Zone      @relation("DestinationZone", fields: [destinationZoneId], references: [id], onDelete: Cascade)
+  orderType         OrderType
+  pricePerKg        Float
+  minimumCharge     Float
+  isActive          Boolean   @default(true)
+
+  @@index([sourceZoneId])
+  @@index([destinationZoneId])
+  @@map("rate_card")
+}
+
+model CODCharge {
+  id              String    @id @default(uuid())
+  orderType       OrderType
+  surchargeAmount Float
+
+  @@map("cod_charge")
+}
+
+model Order {
+  id                String                @id @default(uuid())
+  trackingNumber    String                @unique
+  customerId        String
+  customer          CustomerProfile       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  pickupAreaId      String
+  pickupArea        Area                  @relation("PickupArea", fields: [pickupAreaId], references: [id], onDelete: Restrict)
+  destinationAreaId String
+  destinationArea   Area                  @relation("DestinationArea", fields: [destinationAreaId], references: [id], onDelete: Restrict)
+  assignedAgentId   String?
+  assignedAgent     DeliveryAgentProfile? @relation(fields: [assignedAgentId], references: [id], onDelete: SetNull)
+  orderType         OrderType
+  paymentType       PaymentType
+  packageLength     Float
+  packageWidth      Float
+  packageHeight     Float
+  actualWeight      Float
+  volumetricWeight  Float
+  billableWeight    Float
+  shippingCharge    Float
+  CODCharge         Float
+  totalCharge       Float
+  status            OrderStatus           @default(PENDING)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  trackingHistories TrackingHistory[]
+  agentAssignments  AgentAssignment[]
+  reschedules       Reschedule[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([assignedAgentId])
+  @@map("order")
+}
+
+model TrackingHistory {
+  id             String       @id @default(uuid())
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  previousStatus OrderStatus?
+  newStatus      OrderStatus
+  changedBy      String
+  remarks        String?
+  timestamp      DateTime     @default(now())
+
+  @@index([orderId])
+  @@map("tracking_history")
+}
+
+model AgentAssignment {
+  id             String               @id @default(uuid())
+  orderId        String
+  order          Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  agentId        String
+  agent          DeliveryAgentProfile @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  assignedBy     String
+  assignmentType AssignmentType
+  assignedAt     DateTime             @default(now())
+
+  @@map("agent_assignment")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@map("notification")
+}
+
+model Reschedule {
+  id            String           @id @default(uuid())
+  orderId       String
+  order         Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  requestedDate DateTime
+  reason        String
+  status        RescheduleStatus @default(PENDING)
+
+  @@map("reschedule")
 }

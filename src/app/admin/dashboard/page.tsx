@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Timeline, TimelineItem } from "@/components/ui/timeline";
+import Link from "next/link";
 import {
   TrendingUp,
   Truck,
@@ -118,7 +119,11 @@ export default function AdminDashboardPage() {
                   <TableBody>
                     {recentOrders.map((order) => (
                       <TableRow key={order.id} className="border-border/25 hover:bg-secondary/20">
-                        <TableCell className="font-mono text-xs font-semibold text-foreground/90">{order.id}</TableCell>
+                        <TableCell className="font-mono text-xs font-semibold text-foreground/90">
+                          <Link href={`/admin/orders/${order.id}`} className="text-primary hover:underline font-bold">
+                            {order.id}
+                          </Link>
+                        </TableCell>
                         <TableCell className="font-semibold text-xs">{order.customer}</TableCell>
                         <TableCell className="text-xs font-medium text-muted-foreground">{order.agent}</TableCell>
                         <TableCell>

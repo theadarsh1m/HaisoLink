@@ -19,6 +19,7 @@ export function Sidebar({ role = "CUSTOMER", onClose }: SidebarProps) {
       case "ADMIN":
         return [
           { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/admin/agents", label: "Manage Agents", icon: User },
           { href: "/admin/analytics", label: "Analytics (Stub)", icon: ClipboardList },
           { href: "/admin/security", label: "RBAC Controls", icon: Shield },
           { href: "/admin/settings", label: "System Config", icon: Settings },
