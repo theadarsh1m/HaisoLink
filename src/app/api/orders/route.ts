@@ -1,36 +1,42 @@
-import { NextRequest } from "next/server";
-import { successResponse } from "@/utils/api-response";
+import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
+import { db } from "@/lib/db";
 
-export async function GET() {
-  return successResponse(
-    [
-      {
-        id: "order-uuid-1",
-        trackingNumber: "HL-8094",
-        customerId: "cust-uuid-1",
-        pickupAreaId: "area-uuid-1",
-        destinationAreaId: "area-uuid-2",
-        status: "PENDING",
-        totalCharge: 15.0,
-      },
-    ],
-    "Orders retrieved successfully"
-  );
-}
-
-export async function POST(request: NextRequest) {
+export const GET = withAuth(async (request, user) => {
   try {
-    const body = await request.json();
-    return successResponse(
-      {
-        id: "order-uuid-2",
-        trackingNumber: "HL-8095",
-        ...body,
+    if (user.role !== "CUSTOMER") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const customerProfile = await db.customerProfile.findUnique({
+      where: { userId: user.id },
+    });
+
+    if (!customerProfile) {
+      return NextResponse.json(
+        { error: "Customer profile not found" },
+        { status: 404 }
+      );
+    }
+
+    const orders = await db.order.findMany({
+      where: { customerId: customerProfile.id },
+      include: {
+        pickupArea: true,
+        destinationArea: true,
+        trackingHistories: {
+          orderBy: { timestamp: "desc" },
+        },
       },
-      "Order created successfully",
-      201
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("Fetch Orders Error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch orders" },
+      { status: 500 }
     );
-  } catch {
-    return successResponse({}, "Order created successfully", 201);
   }
-}
+});

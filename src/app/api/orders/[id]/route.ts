@@ -1,24 +1,39 @@
-import { NextRequest } from "next/server";
-import { successResponse, errorResponse } from "@/utils/api-response";
-import { OrderRepository } from "@/repositories/OrderRepository";
+import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
+import { db } from "@/lib/db";
 
-export const dynamic = "force-dynamic";
-
-const orderRepo = new OrderRepository();
-
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (request, user, { params }) => {
   try {
     const { id } = await params;
-    const order = await orderRepo.findById(id);
+
+    // Support both UUID and tracking number (e.g. HL-8094)
+    const order = await db.order.findFirst({
+      where: {
+        OR: [
+          { id },
+          { trackingNumber: id }
+        ]
+      },
+      include: {
+        customer: true,
+        pickupArea: true,
+        destinationArea: true,
+        assignedAgent: true,
+        trackingHistories: {
+          orderBy: { timestamp: "desc" },
+        },
+        agentAssignments: true,
+        reschedules: true,
+      },
+    });
+
     if (!order) {
-      return errorResponse("Order not found", null, 404);
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
-    return successResponse(order, "Order retrieved successfully");
+
+    return NextResponse.json(order);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to retrieve order";
-    return errorResponse(message, null, 500);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-}
+});

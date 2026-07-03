@@ -7,10 +7,10 @@ import { APIError } from "@/lib/errors";
 export type Role = "ADMIN" | "DELIVERY_AGENT" | "CUSTOMER";
 
 export function withAuth(
-  handler: (req: Request, user: any) => Promise<NextResponse>,
+  handler: (req: Request, user: any, context?: any) => Promise<NextResponse>,
   allowedRoles?: Role[]
 ) {
-  return async (req: Request) => {
+  return async (req: Request, context?: any) => {
     try {
       const session = await auth.api.getSession({
         headers: await headers(),
@@ -37,7 +37,7 @@ export function withAuth(
       // Log successful access for tracing
       logger.http(`[${req.method}] ${req.url} accessed by ${session.user.id}`);
 
-      return await handler(req, session.user);
+      return await handler(req, session.user, context);
     } catch (error: any) {
       if (error instanceof APIError) {
         logger.warn(`[${req.method}] ${req.url} - ${error.name}: ${error.message}`);

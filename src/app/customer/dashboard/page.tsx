@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
 import { NotificationPreferencesPanel } from "@/components/shared/NotificationPreferencesPanel";
 import { StatCard } from "@/components/ui/stat-card";
@@ -34,11 +36,39 @@ export default function CustomerDashboardPage() {
   const [rescheduleReason, setRescheduleReason] = React.useState("");
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
 
-  const myOrders = [
-    { id: "HL-8094", recipient: "Myself (Home)", address: "789 Pine Rd, Metro City", status: orderStatus, estDelivery: "Today, by 6:00 PM" },
-    { id: "HL-7541", recipient: "David Smith (Gift)", address: "101 Cedar Ln, Suburbia", status: "Delivered", estDelivery: "June 28, 2026" },
-    { id: "HL-6490", recipient: "Office Supply Store", address: "456 Oak Ave, Uptown", status: "Delivered", estDelivery: "May 14, 2026" },
-  ];
+  const router = useRouter();
+  const [myOrders, setMyOrders] = React.useState<any[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchOrders = async () => {
+      setIsLoadingOrders(true);
+      try {
+        const res = await fetch("/api/orders");
+        if (res.ok) {
+          const data = await res.json();
+          const mapped = data.map((order: any) => ({
+            id: order.trackingNumber,
+            recipient: order.destinationArea?.areaName || "Package Delivery",
+            address: `${order.destinationArea?.city || ""}, ${order.destinationArea?.state || ""}`.trim().replace(/^,|,$/, ""),
+            status: order.status,
+            estDelivery: new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+          }));
+          setMyOrders(mapped);
+
+          // Use most recent order for active tracker
+          if (mapped.length > 0) {
+            setOrderStatus(mapped[0].status);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch customer orders", e);
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   const handleSimulateFail = () => {
     setOrderStatus("FAILED");
@@ -119,8 +149,10 @@ export default function CustomerDashboardPage() {
                 Simulate Delivery Fail
               </Button>
             )}
-            <Button className="font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20">
-              <Plus className="h-4 w-4 mr-2" /> Book New Delivery
+            <Button asChild className="font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20">
+              <Link href="/customer/new-order">
+                <Plus className="h-4 w-4 mr-2" /> Book New Delivery
+              </Link>
             </Button>
           </div>
         </div>
@@ -265,8 +297,27 @@ export default function CustomerDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {myOrders.map((order) => (
-                      <TableRow key={order.id} className="border-border/25 hover:bg-secondary/20">
+                    {isLoadingOrders ? (
+                      [1, 2, 3].map((i) => (
+                        <TableRow key={i} className="border-border/25">
+                          {[1, 2, 3, 4, 5].map((j) => (
+                            <TableCell key={j}><div className="h-4 bg-secondary/50 rounded animate-pulse w-24" /></TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : myOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-10 text-sm">
+                          No orders yet. <span className="text-primary font-medium cursor-pointer" onClick={() => router.push("/customer/new-order")}>Book your first delivery →</span>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                    myOrders.map((order) => (
+                      <TableRow 
+                        key={order.id} 
+                        className="border-border/25 hover:bg-secondary/20 cursor-pointer"
+                        onClick={() => router.push(`/customer/tracking?trackingNumber=${order.id}`)}
+                      >
                         <TableCell className="font-mono text-xs font-semibold text-foreground/90">{order.id}</TableCell>
                         <TableCell className="font-semibold text-xs">{order.recipient}</TableCell>
                         <TableCell className="text-xs font-medium text-muted-foreground">{order.address}</TableCell>
@@ -285,7 +336,8 @@ export default function CustomerDashboardPage() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">{order.estDelivery}</TableCell>
                       </TableRow>
-                    ))}
+                    ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

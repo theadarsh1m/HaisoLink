@@ -20,6 +20,7 @@ export function Sidebar({ role = "CUSTOMER", onClose }: SidebarProps) {
         return [
           { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
           { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+          { href: "/admin/live-map", label: "Live Map", icon: Map },
           { href: "/admin/agents", label: "Agents", icon: User },
           { href: "/admin/zones", label: "Zones", icon: Map },
           { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
