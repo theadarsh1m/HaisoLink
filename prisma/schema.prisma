@@ -103,6 +103,7 @@ model User {
   notifications          Notification[]
   notificationPreference NotificationPreference?
   notificationLogs       NotificationLog[]
+  auditLogs              AuditLog[]
 
   @@map("user")
 }
@@ -389,4 +390,19 @@ model DeliveryProof {
   timestamp     DateTime @default(now())
 
   @@map("delivery_proof")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation(fields: [adminId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_log")
 }

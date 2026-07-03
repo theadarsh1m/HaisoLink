@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Truck, LayoutDashboard, Shield, ClipboardList, Map, Settings, User } from "lucide-react";
+import { Truck, LayoutDashboard, Shield, ClipboardList, Map, Settings, User, DollarSign, BarChart3 } from "lucide-react";
 
 interface SidebarProps {
   role?: string;
@@ -18,11 +18,14 @@ export function Sidebar({ role = "CUSTOMER", onClose }: SidebarProps) {
     switch (role.toUpperCase()) {
       case "ADMIN":
         return [
-          { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-          { href: "/admin/agents", label: "Manage Agents", icon: User },
-          { href: "/admin/analytics", label: "Analytics (Stub)", icon: ClipboardList },
-          { href: "/admin/security", label: "RBAC Controls", icon: Shield },
-          { href: "/admin/settings", label: "System Config", icon: Settings },
+          { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
+          { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+          { href: "/admin/agents", label: "Agents", icon: User },
+          { href: "/admin/zones", label: "Zones", icon: Map },
+          { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
+          { href: "/admin/audit-logs", label: "Audit Logs", icon: Shield },
+          { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+          { href: "/admin/settings", label: "Settings", icon: Settings },
         ];
       case "DELIVERY_AGENT":
         return [
