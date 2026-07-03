@@ -38,6 +38,8 @@ export default function NewOrderPage() {
   const [isCalculating, setIsCalculating] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [priceDetails, setPriceDetails] = React.useState<{ shippingCharge: number; CODCharge: number; totalCharge: number } | null>(null);
+  const [isPricing, setIsPricing] = React.useState(false);
 
   // Keep refs to latest values to avoid stale closures
   const pickupRef = React.useRef(pickup);
@@ -113,21 +115,13 @@ export default function NewOrderPage() {
   };
 
   const handleSubmit = async () => {
-    if (!pickup || !destination) return;
+    if (!pickup || !destination || !priceDetails) return;
     setIsSubmitting(true);
     setError("");
     
     try {
       const pickupAreaId = await resolveArea(pickup);
       const destinationAreaId = await resolveArea(destination);
-
-      // Dummy calculation for now (in production this would call a pricing API)
-      const dist = route?.distanceKm || 10;
-      const baseRate = orderType === "EXPRESS" ? 2.5 : 1.5;
-      const calcWeight = Math.max(parseFloat(weight), (parseFloat(length) * parseFloat(width) * parseFloat(height)) / 5000);
-      const shippingCharge = parseFloat((dist * baseRate * calcWeight).toFixed(2));
-      const CODCharge = paymentType === "COD" ? 2.0 : 0;
-      const totalCharge = shippingCharge + CODCharge;
 
       const res = await fetch("/api/orders/create", {
         method: "POST",
@@ -141,9 +135,9 @@ export default function NewOrderPage() {
           packageWidth: parseFloat(width),
           packageHeight: parseFloat(height),
           actualWeight: parseFloat(weight),
-          shippingCharge,
-          CODCharge,
-          totalCharge,
+          shippingCharge: priceDetails.shippingCharge,
+          CODCharge: priceDetails.CODCharge,
+          totalCharge: priceDetails.totalCharge,
         }),
       });
 
@@ -160,6 +154,43 @@ export default function NewOrderPage() {
       setIsSubmitting(false);
     }
   };
+
+  React.useEffect(() => {
+    if (step === "CONFIRM" && pickup && destination) {
+      const fetchPrice = async () => {
+        setIsPricing(true);
+        setError("");
+        try {
+          const res = await fetch("/api/orders/calculate-price", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              pickupLat: pickup.lat,
+              pickupLng: pickup.lng,
+              pickupName: pickup.displayName.split(",").slice(0, 2).join(","),
+              destLat: destination.lat,
+              destLng: destination.lng,
+              destName: destination.displayName.split(",").slice(0, 2).join(","),
+              orderType,
+              paymentType,
+              length: parseFloat(length),
+              width: parseFloat(width),
+              height: parseFloat(height),
+              actualWeight: parseFloat(weight),
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to calculate price");
+          setPriceDetails(data);
+        } catch (err: any) {
+          setError(err.message);
+        } finally {
+          setIsPricing(false);
+        }
+      };
+      fetchPrice();
+    }
+  }, [step, paymentType, pickup, destination, orderType, length, width, height, weight]);
 
   return (
     <DashboardLayout userRole="CUSTOMER" userEmail="customer@haisolink.com">
@@ -381,13 +412,24 @@ export default function NewOrderPage() {
                 <div className="h-px bg-border/50 my-2" />
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping Charge</span>
-                  <span className="font-medium">Calculated at submit</span>
+                  <span className="font-medium">
+                    {isPricing ? <span className="animate-pulse">Calculating...</span> : priceDetails ? `$${priceDetails.shippingCharge.toFixed(2)}` : "-"}
+                  </span>
                 </div>
                 {paymentType === "COD" && (
                   <div className="flex justify-between text-sm text-rose-500">
                     <span>COD Surcharge</span>
-                    <span>+$2.00</span>
+                    <span>{isPricing ? <span className="animate-pulse">Calculating...</span> : priceDetails ? `+$${priceDetails.CODCharge.toFixed(2)}` : "-"}</span>
                   </div>
+                )}
+                {priceDetails && !isPricing && (
+                  <>
+                    <div className="h-px bg-border/50 my-2" />
+                    <div className="flex justify-between font-bold text-lg">
+                      <span>Total</span>
+                      <span>${priceDetails.totalCharge.toFixed(2)}</span>
+                    </div>
+                  </>
                 )}
                 
                 {error && (

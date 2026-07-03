@@ -1,8 +1,23 @@
 # HaisoLink - Last-Mile Logistics Management Platform
 
-HaisoLink is an enterprise-grade, highly-scalable foundation for a last-mile delivery tracking platform. It is architected to allow pluggable integrations of pricing calculations, agent scheduling engines, zone clustering algorithms, notifications, and real-time mapping.
+HaisoLink is an enterprise-grade, highly-scalable foundation for a last-mile delivery tracking platform. It is architected to handle the end-to-end logistics lifecycle—from customer order creation and automated pricing calculation to dynamic dispatching, live courier tracking, and robust proof-of-delivery workflows.
 
-This codebase sets up a clean, production-ready foundation using TypeScript strict-mode typing, role-based access control (RBAC), theme selection hooks, standardized API models, and visual placeholder dashboards for three distinct user personas: Administrators, Delivery Agents, and Customers.
+This codebase provides a production-ready foundation using TypeScript strict-mode typing, role-based access control (RBAC), standardized API models, and dedicated operational dashboards for three distinct user personas: Administrators, Delivery Agents, and Customers.
+
+---
+
+## Key Features
+
+* **Dynamic Pricing Engine**: Automatically calculates shipping charges based on Volumetric vs. Actual weight comparisons, configurable Rate Cards (B2B/B2C, inter/intra zone), and COD surcharges.
+* **Automated Dispatch & Assignment**: Dispatches are assigned to delivery agents via a comprehensive algorithm scoring their current proximity (Haversine distance), live workload, and agent rating.
+* **Live Interactive Mapping**: Completely free and robust integration using **OpenStreetMap (OSRM)**, **React Leaflet**, and **Nominatim API** for precise geocoding, reverse-geocoding, and route mapping without Google Maps vendor lock-in.
+* **Role-Based Portals**:
+  * **Customer Portal**: Create orders, view active tracking timelines, and initiate reschedule workflows for failed deliveries.
+  * **Agent Courier Hub**: Manage duty availability, view active dispatches, utilize live mapping, and advance order statuses to `DELIVERED` or `FAILED`.
+  * **Admin Command Center**: Complete oversight of all orders, active agent fleet map, zone management, and manual override capabilities.
+* **Real-time Event Tracking**: Centralized `OrderLifecycleService` logs every order timeline transition with timestamped histories and actor associations.
+* **Robust Notification Hooks (Email/SMS/In-App)**: Dispatch event hooks fire automated customer updates on statuses such as `PICKED_UP`, `OUT_FOR_DELIVERY`, and `RESCHEDULED`.
+* **Reschedule & Failure Recovery**: Failed deliveries allow customers to choose a new date, which automatically triggers re-entry into the algorithmic dispatch pool for reassignment.
 
 ---
 
@@ -12,8 +27,9 @@ HaisoLink uses the following framework integrations:
 
 * **Core**: Next.js 15 (App Router), React 19, TypeScript
 * **Styling**: Tailwind CSS v4.0, shadcn/ui custom primitives
-* **Database & ORM**: PostgreSQL database target configuration, Prisma ORM
+* **Database & ORM**: PostgreSQL database, Prisma ORM
 * **Authentication**: Better Auth (supporting Role-Based Access Control)
+* **Mapping Engine**: Leaflet, React Leaflet, OpenStreetMap API, OSRM Routing
 * **Form & Validation**: React Hook Form with Zod schema resolvers
 * **State Management**: TanStack React Query v5
 
@@ -30,46 +46,28 @@ haisolink/
 ├── src/
 │   ├── app/
 │   │   ├── (auth)/          # Authentication routing layout
-│   │   │   ├── login/
-│   │   │   ├── register/
-│   │   │   ├── forgot-password/
-│   │   │   └── reset-password/
-│   │   ├── admin/
-│   │   │   └── dashboard/   # System control room (Statistics, Dispatches, Timelines)
-│   │   ├── customer/
-│   │   │   └── dashboard/   # Client panel (Package booking, Milestones tracking)
-│   │   ├── agent/
-│   │   │   └── dashboard/   # Fleet portal (Duty schedule, Availability toggle, Maps)
-│   │   ├── api/
-│   │   │   ├── auth/        # Better Auth endpoint handlers
-│   │   │   └── v1/
-│   │   │       └── health/  # API standard confirmation test route
-│   │   ├── unauthorized/    # Access blocked fallback route
-│   │   ├── not-found.tsx    # Custom 404 Route illustration
-│   │   ├── error.tsx        # Custom Global Error Boundary
-│   │   ├── layout.tsx       # Root document layout with Theme & Query providers
-│   │   └── page.tsx         # Welcome Landing Page & test-routing deck
+│   │   ├── admin/           # Admin control room (Statistics, Dispatches, Timelines, Zones)
+│   │   ├── customer/        # Client panel (Package booking, Milestones tracking)
+│   │   ├── agent/           # Fleet portal (Duty schedule, Live orders, Maps)
+│   │   ├── api/             # API Routes for Logistics workflows, Pricing, and Auth
+│   │   └── layout.tsx       # Root document layout with Theme & Query providers
 │   ├── components/
+│   │   ├── map/             # Leaflet & OpenStreetMap interactive components
 │   │   ├── ui/              # Button, Input, Table, Card, Dialog, Badge, Skeletons
-│   │   ├── layouts/         # AuthCard and Collapsible Drawer Dashboard layouts
-│   │   └── shared/          # Navbar, Sidebar, ThemeProvider, ThemeSwitcher toggles
+│   │   └── layouts/         # Shared Dashboard shell layouts
 │   ├── lib/
 │   │   ├── db.ts            # Global Prisma Client connection pool wrapper
-│   │   ├── auth.ts          # Server-side Better Auth setup
-│   │   ├── auth-client.ts   # Client-side Better Auth session hook bindings
-│   │   └── react-query.tsx  # TanStack QueryClient layout providers
+│   │   ├── haversine.ts     # Geographic distance calculator
+│   │   └── services/        # Third-party service wrappers (Geocoding, Routing)
+│   ├── services/
+│   │   ├── AssignmentService.ts      # Core algorithmic agent assignment engine
+│   │   ├── OrderLifecycleService.ts  # Status transition guardrails & hooks
+│   │   ├── PricingService.ts         # Live Volumetric & Rate Card math
+│   │   └── NotificationService.ts    # Multi-channel notification dispatcher
 │   ├── utils/
-│   │   ├── format.ts        # Currency, DateTime, and Relative Time formatters
-│   │   ├── api-response.ts  # Standard {success, message, data, errors} JSON responders
-│   │   └── logger.ts        # Contextual dev console formatters & production JSON log output
-│   ├── validations/
-│   │   ├── auth.ts          # Auth forms validation schema
-│   │   ├── order.ts         # Booking creation validation schema
-│   │   ├── agent.ts         # Fleet details validation schema
-│   │   └── admin.ts         # System settings validation schema
-│   ├── middleware.ts        # Next.js session validation and RBAC routing filter
-│   └── types/
-│       └── index.ts         # Shared TypeScript entities (User, Session, Pagination, Filters)
+│   │   └── api-response.ts  # Standard {success, message, data, errors} JSON responders
+│   └── validations/
+│       └── workflow.ts      # Shared Zod schemas for system transitions
 ├── .env.example
 ├── tsconfig.json
 ├── components.json
@@ -90,13 +88,8 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/haisolink?schema=pub
 BETTER_AUTH_SECRET="your-better-auth-secret-key-at-least-32-chars"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
-# Email Provider Configuration
-EMAIL_PROVIDER="resend"
-EMAIL_API_KEY="re_your_api_key"
-
-# Mapping & Geolocation APIs
-GOOGLE_MAPS_API_KEY="your-google-maps-api-key"
-NEXT_PUBLIC_MAP_PROVIDER="google" # 'google' or 'mapbox' or 'open-street-map'
+# Note: HaisoLink runs completely free mapping via OpenStreetMap. 
+# No API keys are required for Geocoding or Map integrations.
 ```
 
 ---
@@ -114,6 +107,9 @@ cp .env.example .env
 
 # 3. Generate Prisma client typings
 npx prisma generate
+
+# 4. Sync Database schema
+npx prisma db push
 ```
 
 ---
@@ -128,16 +124,4 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to view the welcome deck landing page.
 
----
-
-## Verification Commands
-
-Validate compilation stability and coding style checks before deployment:
-
-```bash
-# Verify ESLint configurations
-npm run lint
-
-# Compile and check production bundle builds
-npm run build
-```
+*Note: For the Leaflet components to render properly without window errors, Next.js dynamic imports with `ssr: false` are utilized extensively across the codebase.*

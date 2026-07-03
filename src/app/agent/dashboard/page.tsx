@@ -21,10 +21,44 @@ export default function AgentDashboardPage() {
   const [gpsCoordinates, setGpsCoordinates] = React.useState<{ lat: number; lng: number } | null>(null);
   const [statusMessage, setStatusMessage] = React.useState<string | null>(null);
 
-  const assignedOrders = [
-    { id: "HL-8094", client: "Sophia Martinez", destination: "789 Pine Rd, Metro City", packageType: "Documents", weight: "0.5 kg", status: "Loaded" },
-    { id: "HL-8091", client: "William Brown", destination: "202 Birch Blvd, Downtown", packageType: "Electronics", weight: "2.4 kg", status: "Assigned" },
-  ];
+  const [assignedOrders, setAssignedOrders] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const fetchOrders = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/agent/orders?active=true");
+      if (res.ok) {
+        setAssignedOrders(await res.json());
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 30000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
+
+  const updateOrderStatus = async (orderId: string, status: string, lat?: number, lng?: number) => {
+    try {
+      setStatusMessage(`Updating order to ${status}...`);
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, latitude: lat, longitude: lng })
+      });
+      if (res.ok) {
+        setStatusMessage(`Order updated to ${status}`);
+        fetchOrders();
+      } else {
+        setStatusMessage("Failed to update order");
+      }
+    } catch (e) {
+      setStatusMessage("Error updating order");
+    }
+  };
 
   const handleAvailabilityChange = async (newStatus: "AVAILABLE" | "BUSY" | "OFFLINE" | "ON_LEAVE") => {
     try {
@@ -192,22 +226,56 @@ export default function AgentDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {assignedOrders.map((order) => (
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading orders...</TableCell>
+                      </TableRow>
+                    ) : assignedOrders.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No active dispatches right now.</TableCell>
+                      </TableRow>
+                    ) : assignedOrders.map((order) => (
                       <TableRow key={order.id} className="border-border/25 hover:bg-secondary/20">
-                        <TableCell className="font-mono text-xs font-semibold text-foreground/90">{order.id}</TableCell>
+                        <TableCell className="font-mono text-xs font-semibold text-foreground/90">{order.trackingNumber}</TableCell>
                         <TableCell className="font-semibold text-xs">{order.client}</TableCell>
                         <TableCell className="text-xs font-medium text-muted-foreground">{order.destination}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{order.weight}</TableCell>
                         <TableCell>
-                          <Badge
-                            className={
-                              order.status === "Loaded"
-                                ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20"
-                                : "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 border-blue-500/20"
-                            }
-                          >
-                            {order.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              className={
+                                order.status === "DELIVERED"
+                                  ? "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10 border-emerald-500/20"
+                                  : order.status === "FAILED"
+                                  ? "bg-rose-500/10 text-rose-600 hover:bg-rose-500/10 border-rose-500/20"
+                                  : "bg-blue-500/10 text-blue-600 hover:bg-blue-500/10 border-blue-500/20"
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                            
+                            {/* Action Dropdown for Status Update */}
+                            <select 
+                              className="text-[10px] bg-card border border-border rounded px-1 py-0.5 ml-2 cursor-pointer focus:outline-none"
+                              value={""}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  updateOrderStatus(order.id, e.target.value, gpsCoordinates?.lat, gpsCoordinates?.lng);
+                                }
+                              }}
+                            >
+                              <option value="">Update...</option>
+                              {order.status === "ASSIGNED" && <option value="PICKED_UP">Mark Picked Up</option>}
+                              {order.status === "PICKED_UP" && <option value="IN_TRANSIT">Mark In Transit</option>}
+                              {order.status === "IN_TRANSIT" && <option value="OUT_FOR_DELIVERY">Mark Out For Delivery</option>}
+                              {order.status === "OUT_FOR_DELIVERY" && (
+                                <>
+                                  <option value="DELIVERED">Mark Delivered</option>
+                                  <option value="FAILED">Mark Failed</option>
+                                </>
+                              )}
+                            </select>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}

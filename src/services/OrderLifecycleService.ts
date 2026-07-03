@@ -3,10 +3,14 @@ import { OrderStatus, Role } from "@prisma/client";
 import { TrackingRepository } from "@/repositories/TrackingRepository";
 import { DeliveryRepository } from "@/repositories/DeliveryRepository";
 import { RescheduleRepository } from "@/repositories/RescheduleRepository";
+import { NotificationService } from "./NotificationService";
+import { AssignmentService } from "./AssignmentService";
 
 const trackingRepo = new TrackingRepository();
 const deliveryRepo = new DeliveryRepository();
 const rescheduleRepo = new RescheduleRepository();
+const notificationService = new NotificationService();
+const assignmentService = new AssignmentService();
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   CREATED: ["ASSIGNED", "CANCELLED"],
@@ -88,6 +92,26 @@ export class OrderLifecycleService {
       );
     });
 
+    if (order.customer && order.customer.userId) {
+      const { NotificationService } = await import("./NotificationService");
+      const notificationService = new NotificationService();
+      notificationService.dispatchEvent(
+        order.customer.userId,
+        `ORDER_${nextStatus}` as any,
+        "MEDIUM",
+        {
+          orderId: order.trackingNumber,
+          customerName: order.customer.companyName || "Customer",
+          status: nextStatus,
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString(),
+          location: "Location updated",
+          supportEmail: "support@haisolink.com"
+        },
+        order.id
+      ).catch(err => console.error("Notification Error:", err));
+    }
+
     return true;
   }
 
@@ -148,6 +172,27 @@ export class OrderLifecycleService {
       );
     });
 
+    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+    if (orderWithCustomer?.customer?.userId) {
+      const { NotificationService } = await import("./NotificationService");
+      const notificationService = new NotificationService();
+      notificationService.dispatchEvent(
+        orderWithCustomer.customer.userId,
+        "ORDER_FAILED",
+        "HIGH",
+        {
+          orderId: orderWithCustomer.trackingNumber,
+          customerName: "Customer",
+          status: "FAILED",
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString(),
+          location: reason,
+          supportEmail: "support@haisolink.com"
+        },
+        orderId
+      ).catch(console.error);
+    }
+
     return true;
   }
 
@@ -199,6 +244,27 @@ export class OrderLifecycleService {
       );
     });
 
+    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+    if (orderWithCustomer?.customer?.userId) {
+      const { NotificationService } = await import("./NotificationService");
+      const notificationService = new NotificationService();
+      notificationService.dispatchEvent(
+        orderWithCustomer.customer.userId,
+        "ORDER_DELIVERED",
+        "MEDIUM",
+        {
+          orderId: orderWithCustomer.trackingNumber,
+          customerName: "Customer",
+          status: "DELIVERED",
+          time: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString(),
+          location: "Delivery Location",
+          supportEmail: "support@haisolink.com"
+        },
+        orderId
+      ).catch(console.error);
+    }
+
     return true;
   }
 
@@ -244,6 +310,30 @@ export class OrderLifecycleService {
         },
         tx
       );
+    });
+
+    // Trigger RESCHEDULED notification
+    if (order.customer?.userId) {
+      notificationService.dispatchEvent(
+        order.customer.userId,
+        "ORDER_RESCHEDULED",
+        "HIGH",
+        {
+          orderId: order.trackingNumber,
+          customerName: "Customer",
+          status: "RESCHEDULED",
+          time: new Date().toLocaleTimeString(),
+          date: requestedDate.toLocaleDateString(),
+          location: "See details",
+          supportEmail: "support@haisolink.com"
+        },
+        orderId
+      ).catch(console.error);
+    }
+
+    // Try assigning a new agent right away for the new date
+    assignmentService.autoAssignAgent(orderId).catch(err => {
+      console.error(`Failed to auto-assign agent for rescheduled order ${orderId}:`, err);
     });
 
     return true;

@@ -24,11 +24,9 @@ import {
 } from "lucide-react";
 
 export default function CustomerDashboardPage() {
-  const [activeTracker, setActiveTracker] = React.useState<TimelineItem[]>([
-    { id: "1", title: "Out for Delivery", description: "Courier Liam Miller has loaded your package in vehicle #LN-232 and is en route.", time: "15 mins ago", status: "current" },
-    { id: "2", title: "Arrived at Sorting Hub B", description: "Package was processed through sorting conveyor belt.", time: "4 hours ago", status: "completed" },
-    { id: "3", title: "Picked Up & Manifested", description: "Package received at merchant collection point.", time: "8 hours ago", status: "completed" },
-  ]);
+  const [activeTracker, setActiveTracker] = React.useState<any[]>([]);
+  const [activeOrderId, setActiveOrderId] = React.useState<string | null>(null);
+  const [activeTrackingNumber, setActiveTrackingNumber] = React.useState<string>("");
 
   const [orderStatus, setOrderStatus] = React.useState("OUT_FOR_DELIVERY");
   const [showReschedule, setShowReschedule] = React.useState(false);
@@ -57,8 +55,22 @@ export default function CustomerDashboardPage() {
           setMyOrders(mapped);
 
           // Use most recent order for active tracker
-          if (mapped.length > 0) {
-            setOrderStatus(mapped[0].status);
+          if (data.length > 0) {
+            const latestOrder = data[0];
+            setOrderStatus(latestOrder.status);
+            setActiveOrderId(latestOrder.id);
+            setActiveTrackingNumber(latestOrder.trackingNumber);
+            
+            if (latestOrder.trackingHistories) {
+              const histories = latestOrder.trackingHistories.map((h: any, index: number) => ({
+                id: h.id,
+                title: h.newStatus,
+                description: h.remarks || "Status updated",
+                time: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                status: index === 0 ? "current" : "completed"
+              }));
+              setActiveTracker(histories);
+            }
           }
         }
       } catch (e) {
@@ -80,9 +92,9 @@ export default function CustomerDashboardPage() {
   };
 
   const handleRescheduleSubmit = async () => {
-    if (!rescheduleDate || !rescheduleReason) return;
+    if (!rescheduleDate || !rescheduleReason || !activeOrderId) return;
     try {
-      const res = await fetch("/api/orders/HL-8094/reschedule", {
+      const res = await fetch(`/api/orders/${activeOrderId}/reschedule`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -94,7 +106,7 @@ export default function CustomerDashboardPage() {
       if (res.ok) {
         setOrderStatus("RESCHEDULED");
         setActiveTracker(prev => [
-          { id: `res-${Date.now()}`, title: "Rescheduled", description: `Requested for ${rescheduleDate}: ${rescheduleReason}`, time: "Just now", status: "current" },
+          { id: `res-${Date.now()}`, title: "RESCHEDULED", description: `Requested for ${rescheduleDate}: ${rescheduleReason}`, time: "Just now", status: "current" },
           ...prev.map(item => ({ ...item, status: "completed" as const })),
         ]);
         setShowReschedule(false);
@@ -191,27 +203,34 @@ export default function CustomerDashboardPage() {
                 <div>
                   <h3 className="text-lg font-bold tracking-tight">Active Tracking</h3>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="font-mono text-xs font-semibold text-primary">HL-8094</span>
-                    <Badge variant="outline" className="text-[10px] py-0 font-bold uppercase">
-                      {orderStatus}
-                    </Badge>
+                    <span className="font-mono text-xs font-semibold text-primary">{activeTrackingNumber || "No Active Order"}</span>
+                    {activeTrackingNumber && (
+                      <Badge variant="outline" className="text-[10px] py-0 font-bold uppercase">
+                        {orderStatus}
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 <div className="p-2 bg-primary/10 text-primary rounded-xl border border-primary/20">
                   <MapPin className="h-4.5 w-4.5" />
                 </div>
               </div>
-              <Timeline items={activeTracker} />
+              
+              {activeTracker.length > 0 ? (
+                <Timeline items={activeTracker} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No tracking history yet.</p>
+              )}
 
               <div className="pt-4 border-t border-border/40 space-y-2 mt-6">
                 <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Assigned Courier</p>
                 <div className="flex items-center justify-between text-xs p-3 bg-secondary/10 rounded-xl border border-border/20">
                   <div>
-                    <p className="font-bold text-foreground">Liam Miller</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Vehicle: Motorcycle (#LN-232)</p>
+                    <p className="font-bold text-foreground">Assigned dynamically</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Tracking live via Agent App</p>
                   </div>
                   <Badge variant="outline" className="border-primary/20 text-primary bg-primary/5 text-[10px] font-bold">
-                    Est. Pickup: 15m
+                    Est. Pickup: Auto
                   </Badge>
                 </div>
               </div>
