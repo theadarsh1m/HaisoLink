@@ -46,8 +46,11 @@ export const GET = withAuth(async (request: Request) => {
             ordersFailedToday,
           });
 
+          if (request.signal.aborted) return;
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
         } catch (error) {
+          // Ignore errors caused by disconnected clients
+          if (error instanceof TypeError && error.message.includes('closed')) return;
           console.error("SSE Live API Error:", error);
         }
       };
