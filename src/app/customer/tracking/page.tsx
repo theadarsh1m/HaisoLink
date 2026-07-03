@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Package, AlertCircle, Clock, Truck, CheckCircle2 } from "lucide-react";
+import { Search, MapPin, AlertCircle, Clock, Truck, CheckCircle2 } from "lucide-react";
 
 export default function CustomerTrackingPage() {
   const [trackingNumber, setTrackingNumber] = React.useState("");
@@ -177,7 +177,7 @@ export default function CustomerTrackingPage() {
                   </div>
                   <h3 className="text-xl font-bold tracking-tight mb-2">No Tracking Information Found</h3>
                   <p className="text-muted-foreground max-w-md mx-auto">
-                    We couldn't find any details for tracking number <span className="font-mono font-bold text-foreground">"{trackingNumber}"</span>. Please check the number and try again.
+                    We couldn&apos;t find any details for tracking number <span className="font-mono font-bold text-foreground">&quot;{trackingNumber}&quot;</span>. Please check the number and try again.
                   </p>
                 </CardContent>
               </Card>

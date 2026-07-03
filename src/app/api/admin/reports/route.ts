@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
-import { startOfDay, endOfDay, subDays, subWeeks, subMonths } from "date-fns";
+import { startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
 
 export const GET = withAuth(async (request: Request) => {
   try {

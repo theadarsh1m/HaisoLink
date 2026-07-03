@@ -70,7 +70,7 @@ export const GET = withAuth(async (request: Request) => {
         clearInterval(intervalId);
         try {
           controller.close();
-        } catch (e) {
+        } catch (_e) {
           // ignore already closed
         }
       });
