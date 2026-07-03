@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
     <DashboardLayout userRole="ADMIN" userEmail="admin@haisolink.com">
       <div className="space-y-8 pb-8">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/80">
+          <h1 className="text-3xl font-extrabold tracking-tight">
             Overview Dashboard
           </h1>
           <p className="text-muted-foreground mt-1">

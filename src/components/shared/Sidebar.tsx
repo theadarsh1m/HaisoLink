@@ -52,7 +52,7 @@ export function Sidebar({ role = "CUSTOMER", onClose }: SidebarProps) {
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
           <Truck className="h-4.5 w-4.5" />
         </div>
-        <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+        <span className="font-extrabold text-lg tracking-tight text-primary">
           HaisoLink
         </span>
       </div>

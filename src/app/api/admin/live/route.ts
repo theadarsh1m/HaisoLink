@@ -12,7 +12,10 @@ export const GET = withAuth(async (request: Request) => {
   // Create a stream
   const stream = new ReadableStream({
     async start(controller) {
+      let isClosed = false;
+
       const sendEvent = async () => {
+        if (isClosed || request.signal.aborted) return;
         try {
           const todayStart = startOfDay(new Date());
           const todayEnd = endOfDay(new Date());
@@ -46,11 +49,11 @@ export const GET = withAuth(async (request: Request) => {
             ordersFailedToday,
           });
 
-          if (request.signal.aborted) return;
+          if (isClosed || request.signal.aborted) return;
           controller.enqueue(encoder.encode(`data: ${data}\n\n`));
-        } catch (error) {
+        } catch (error: any) {
           // Ignore errors caused by disconnected clients
-          if (error instanceof TypeError && error.message.includes('closed')) return;
+          if (error?.message?.includes('closed') || error?.code === 'ERR_INVALID_STATE') return;
           console.error("SSE Live API Error:", error);
         }
       };
@@ -63,8 +66,13 @@ export const GET = withAuth(async (request: Request) => {
 
       // Clean up when connection closes
       request.signal.addEventListener("abort", () => {
+        isClosed = true;
         clearInterval(intervalId);
-        controller.close();
+        try {
+          controller.close();
+        } catch (e) {
+          // ignore already closed
+        }
       });
     },
   });

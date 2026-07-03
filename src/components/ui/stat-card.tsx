@@ -42,7 +42,7 @@ export function StatCard({
           )}
         </div>
         <div className="flex items-baseline justify-between mt-2">
-          <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-br from-foreground to-foreground/80">{value}</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{value}</h2>
           {trend && (
             <div
               className={cn(

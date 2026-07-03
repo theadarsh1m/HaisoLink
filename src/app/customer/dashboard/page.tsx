@@ -96,7 +96,7 @@ export default function CustomerDashboardPage() {
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/80">
+              <h1 className="text-3xl font-extrabold tracking-tight">
                 Welcome back, User!
               </h1>
               {statusMessage && (

@@ -20,7 +20,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform duration-300">
             <Truck className="h-5 w-5" />
           </div>
-          <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+          <span className="text-2xl font-black tracking-tight text-primary">
             HaisoLink
           </span>
         </div>

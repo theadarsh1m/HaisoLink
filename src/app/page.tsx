@@ -17,7 +17,7 @@ export default function LandingPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/25">
               <Truck className="h-4.5 w-4.5" />
             </div>
-            <span className="font-black text-lg tracking-tight bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            <span className="font-black text-lg tracking-tight text-primary">
               HaisoLink
             </span>
           </div>
@@ -44,7 +44,7 @@ export default function LandingPage() {
         </div>
         <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
           Scalable Last-Mile Logistics{" "}
-          <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-600 bg-clip-text text-transparent">
+          <span className="text-primary">
             Perfected
           </span>
         </h1>

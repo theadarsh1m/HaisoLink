@@ -96,7 +96,7 @@ export default function AgentDashboardPage() {
       <div className="space-y-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/80">
+            <h1 className="text-3xl font-extrabold tracking-tight">
               Courier Hub
             </h1>
             <p className="text-muted-foreground mt-1">
