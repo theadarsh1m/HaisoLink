@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
@@ -91,4 +92,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, ["ADMIN"]);

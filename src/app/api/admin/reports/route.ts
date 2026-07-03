@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { startOfDay, endOfDay, subDays, subWeeks, subMonths } from "date-fns";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "daily"; // daily, weekly, monthly, custom
@@ -70,4 +71,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, ["ADMIN"]);

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { startOfDay, endOfDay } from "date-fns";
 
 // Ensure this route is evaluated dynamically (no caching)
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const encoder = new TextEncoder();
 
   // Create a stream
@@ -72,4 +73,4 @@ export async function GET(request: Request) {
       Connection: "keep-alive",
     },
   });
-}
+}, ["ADMIN"]);

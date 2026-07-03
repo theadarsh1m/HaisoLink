@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { subDays, format, startOfDay, endOfDay } from "date-fns";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const last7Days = Array.from({ length: 7 }).map((_, i) => {
       const d = subDays(new Date(), i);
@@ -116,4 +117,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+}, ["ADMIN"]);

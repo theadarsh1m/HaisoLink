@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     
@@ -101,4 +102,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, ["ADMIN"]);

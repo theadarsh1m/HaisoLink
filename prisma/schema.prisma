@@ -274,6 +274,9 @@ model Order {
   @@index([status])
   @@index([customerId])
   @@index([assignedAgentId])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@index([status, updatedAt])
   @@map("order")
 }
 

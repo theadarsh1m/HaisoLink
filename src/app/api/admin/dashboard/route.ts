@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { startOfDay, endOfDay } from "date-fns";
+import { withAuth } from "@/lib/api-middleware";
 
-export async function GET() {
+export const GET = withAuth(async (request) => {
   try {
     const todayStart = startOfDay(new Date());
     const todayEnd = endOfDay(new Date());
@@ -95,4 +96,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+}, ["ADMIN"]);

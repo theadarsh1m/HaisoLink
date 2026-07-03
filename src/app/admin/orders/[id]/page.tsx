@@ -31,8 +31,8 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
 
   const timelineItems: TimelineItem[] = order.trackingHistories.map((history) => ({
     id: history.id,
-    title: history.status,
-    description: history.notes || history.location || "Status updated",
+    title: history.newStatus,
+    description: history.remarks || "Status updated",
     time: format(new Date(history.timestamp), "MMM dd, HH:mm"),
     status: "completed",
   }));
@@ -132,7 +132,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                 {order.assignedAgent ? (
                   <div className="space-y-2">
                     <p className="text-sm"><strong>Name:</strong> {order.assignedAgent.user.fullName}</p>
-                    <p className="text-sm"><strong>Vehicle:</strong> {order.assignedAgent.vehicleType} ({order.assignedAgent.vehicleRegistrationNumber})</p>
+                    <p className="text-sm"><strong>Vehicle:</strong> {order.assignedAgent.vehicleType} ({order.assignedAgent.licenseNumber})</p>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">No agent assigned.</p>
