@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { DashboardLayout } from "@/components/layouts/DashboardLayout";
+import { NotificationPreferencesPanel } from "@/components/shared/NotificationPreferencesPanel";
 import { StatCard } from "@/components/ui/stat-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -294,6 +295,13 @@ export default function CustomerDashboardPage() {
                 Pricing engine dynamically adjusts fees based on zone weights.
               </span>
             </div>
+          </div>
+        </div>
+
+        {}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <NotificationPreferencesPanel />
           </div>
         </div>
       </div>

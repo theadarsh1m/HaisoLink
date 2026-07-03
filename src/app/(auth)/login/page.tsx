@@ -47,6 +47,29 @@ export default function LoginPage() {
     }
   };
 
+  const onDemoLogin = async (role: "admin" | "customer" | "agent") => {
+    setIsLoading(true);
+    setError(null);
+    const email = `${role}@haisolink.com`;
+    const password = "password123";
+    try {
+      await signIn.email({
+        email,
+        password,
+        callbackURL: "/dashboard-redirect",
+      }, {
+        onSuccess: () => router.push("/dashboard-redirect"),
+        onError: (ctx) => {
+          setError(ctx.error.message || `Failed to login as ${role}.`);
+          setIsLoading(false);
+        }
+      });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "An unexpected error occurred.");
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col space-y-1.5 text-center">
@@ -105,7 +128,43 @@ export default function LoginPage() {
           {isLoading ? <Loader size="sm" className="text-primary-foreground" /> : "Sign In"}
         </Button>
       </form>
-
+        <div className="pt-4 border-t border-border/40 space-y-2">
+          <p className="text-xs text-center font-medium text-muted-foreground uppercase tracking-widest mb-3">
+            Demo Logins
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("admin")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Admin
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("customer")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Customer
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("agent")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Agent
+            </Button>
+          </div>
+        </div>
       <div className="text-center text-sm font-medium text-muted-foreground mt-4">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-semibold text-primary hover:underline">

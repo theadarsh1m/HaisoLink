@@ -1,17 +1,9 @@
-import { OrderStatusType } from "@/constants";
-import { TrackingHistory } from "@prisma/client";
-
 export class TrackingService {
-  async updateStatus(
-    _orderId: string,
-    _newStatus: OrderStatusType,
-    _changedBy: string,
-    _remarks?: string
-  ): Promise<boolean> {
+  async updateStatus(): Promise<void> {
     throw new Error("Method not implemented");
   }
 
-  async getTrackingHistory(_orderId: string): Promise<TrackingHistory[]> {
+  async getTrackingHistory(): Promise<Record<string, unknown>[]> {
     throw new Error("Method not implemented");
   }
 }

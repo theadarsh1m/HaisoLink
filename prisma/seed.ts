@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
-import * as bcrypt from "bcryptjs";
+import { hashPassword } from "better-auth/crypto";
 
 const connectionString = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/haisolink?schema=public";
 const pool = new Pool({ connectionString });
@@ -24,20 +24,40 @@ async function main() {
   await db.cODCharge.deleteMany({});
   await db.zone.deleteMany({});
 
-  const passwordHash = await bcrypt.hash("Admin@123", 10);
-  const agentPasswordHash = await bcrypt.hash("Agent@123", 10);
+  const demoPasswordHash = await hashPassword("password123");
 
   await db.user.create({
     data: {
       fullName: "System Admin",
-      email: "admin@example.com",
+      email: "admin@haisolink.com",
       role: "ADMIN",
       emailVerified: true,
       accounts: {
         create: {
-          providerId: "email",
-          accountId: "admin@example.com",
-          password: passwordHash,
+          providerId: "credential",
+          accountId: "admin@haisolink.com",
+          password: demoPasswordHash,
+        },
+      },
+    },
+  });
+
+  await db.user.create({
+    data: {
+      fullName: "Demo Customer",
+      email: "customer@haisolink.com",
+      role: "CUSTOMER",
+      emailVerified: true,
+      accounts: {
+        create: {
+          providerId: "credential",
+          accountId: "customer@haisolink.com",
+          password: demoPasswordHash,
+        },
+      },
+      customerProfile: {
+        create: {
+          defaultAddress: "123 Demo St, Metro City",
         },
       },
     },
@@ -75,7 +95,7 @@ async function main() {
   }
 
   const agentsData = [
-    { name: "John Doe", email: "john@example.com", vehicle: "MOTORCYCLE", license: "DL-1M-1234", zoneId: northZone.id },
+    { name: "Demo Agent", email: "agent@haisolink.com", vehicle: "MOTORCYCLE", license: "DL-1M-1234", zoneId: northZone.id },
     { name: "Jane Smith", email: "jane@example.com", vehicle: "CAR", license: "DL-2C-5678", zoneId: northZone.id },
     { name: "Bob Johnson", email: "bob@example.com", vehicle: "VAN", license: "DL-3V-9012", zoneId: southZone.id },
     { name: "Alice Williams", email: "alice@example.com", vehicle: "MOTORCYCLE", license: "DL-4M-3456", zoneId: southZone.id },
@@ -91,9 +111,9 @@ async function main() {
         emailVerified: true,
         accounts: {
           create: {
-            providerId: "email",
+            providerId: "credential",
             accountId: agent.email,
-            password: agentPasswordHash,
+            password: demoPasswordHash,
           },
         },
         deliveryAgentProfile: {

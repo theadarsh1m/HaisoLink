@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema, RegisterInput } from "@/validations/auth";
-import { signUp } from "@/lib/auth-client";
+import { signUp, signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
@@ -47,6 +47,29 @@ export default function RegisterPage() {
         },
         onError: (ctx) => {
           setError(ctx.error.message || "Something went wrong. Please try again.");
+          setIsLoading(false);
+        }
+      });
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "An unexpected error occurred.");
+      setIsLoading(false);
+    }
+  };
+
+  const onDemoLogin = async (role: "admin" | "customer" | "agent") => {
+    setIsLoading(true);
+    setError(null);
+    const email = `${role}@haisolink.com`;
+    const password = "password123";
+    try {
+      await signIn.email({
+        email,
+        password,
+        callbackURL: "/dashboard-redirect",
+      }, {
+        onSuccess: () => router.push("/dashboard-redirect"),
+        onError: (ctx) => {
+          setError(ctx.error.message || `Failed to login as ${role}.`);
           setIsLoading(false);
         }
       });
@@ -140,6 +163,44 @@ export default function RegisterPage() {
           {isLoading ? <Loader size="sm" className="text-primary-foreground" /> : "Sign Up"}
         </Button>
       </form>
+
+        <div className="pt-4 border-t border-border/40 space-y-2">
+          <p className="text-xs text-center font-medium text-muted-foreground uppercase tracking-widest mb-3">
+            Demo Logins
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("admin")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Admin
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("customer")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Customer
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onDemoLogin("agent")}
+              disabled={isLoading}
+              className="text-xs font-semibold rounded-lg"
+            >
+              Agent
+            </Button>
+          </div>
+        </div>
 
       <div className="text-center text-sm font-medium text-muted-foreground mt-4">
         Already have an account?{" "}

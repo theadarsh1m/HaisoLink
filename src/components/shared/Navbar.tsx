@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import { Bell, Menu, User, LogOut } from "lucide-react";
+import { Menu, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -50,21 +51,8 @@ export function Navbar({ onMenuClick, userEmail = "user@haisolink.com", userRole
           {}
           <ThemeSwitcher />
 
-          {}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-9 h-9 rounded-full relative bg-secondary/30 border border-border/10 hover:bg-secondary transition-all"
-            aria-label="Notifications"
-          >
-            <Bell className="h-[1.1rem] w-[1.1rem] text-muted-foreground" />
-            <span className="absolute top-1 right-1 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </span>
-          </Button>
+          <NotificationDropdown />
 
-          {}
           <div className="flex items-center gap-2 border-l border-border/45 pl-4">
             <div className="flex flex-col items-end hidden sm:flex">
               <span className="text-xs font-semibold text-foreground/90 truncate max-w-[120px]">

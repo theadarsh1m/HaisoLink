@@ -35,10 +35,35 @@ enum PaymentType {
 }
 
 enum NotificationType {
+  ORDER_CREATED
   ORDER_ASSIGNED
-  ORDER_STATUS_UPDATE
+  ORDER_PICKED_UP
+  ORDER_IN_TRANSIT
+  ORDER_OUT_FOR_DELIVERY
+  ORDER_DELIVERED
+  ORDER_FAILED
+  ORDER_RESCHEDULED
+  ORDER_CANCELLED
   SYSTEM_ALERT
   ZONE_WARNING
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  IN_APP
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 enum AssignmentType {
@@ -60,22 +85,24 @@ enum RescheduleStatus {
 }
 
 model User {
-  id                  String                @id @default(uuid())
-  fullName            String
-  email               String                @unique
-  phoneNumber         String?
-  role                Role                  @default(CUSTOMER)
-  profileImage        String?
-  isActive            Boolean               @default(true)
-  emailVerified       Boolean               @default(false)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  deletedAt           DateTime?
-  sessions            Session[]
-  accounts            Account[]
-  customerProfile     CustomerProfile?
-  deliveryAgentProfile DeliveryAgentProfile?
-  notifications       Notification[]
+  id                     String                  @id @default(uuid())
+  fullName               String
+  email                  String                  @unique
+  phoneNumber            String?
+  role                   Role                    @default(CUSTOMER)
+  profileImage           String?
+  isActive               Boolean                 @default(true)
+  emailVerified          Boolean                 @default(false)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  deletedAt              DateTime?
+  sessions               Session[]
+  accounts               Account[]
+  customerProfile        CustomerProfile?
+  deliveryAgentProfile   DeliveryAgentProfile?
+  notifications          Notification[]
+  notificationPreference NotificationPreference?
+  notificationLogs       NotificationLog[]
 
   @@map("user")
 }
@@ -125,9 +152,9 @@ model Verification {
 }
 
 model CustomerProfile {
-  id             String   @id @default(uuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   defaultAddress String
   companyName    String?
   GSTNumber      String?
@@ -171,7 +198,7 @@ model Zone {
 }
 
 model Area {
-  id                String   @id @default(uuid())
+  id                String  @id @default(uuid())
   areaName          String
   city              String
   state             String
@@ -179,9 +206,9 @@ model Area {
   latitude          Float
   longitude         Float
   zoneId            String
-  zone              Zone     @relation(fields: [zoneId], references: [id], onDelete: Restrict)
-  pickupOrders      Order[]  @relation("PickupArea")
-  destinationOrders Order[]  @relation("DestinationArea")
+  zone              Zone    @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  pickupOrders      Order[] @relation("PickupArea")
+  destinationOrders Order[] @relation("DestinationArea")
 
   @@index([pincode])
   @@index([zoneId])
@@ -279,17 +306,52 @@ model AgentAssignment {
 }
 
 model Notification {
-  id        String           @id @default(uuid())
+  id        String               @id @default(uuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
   message   String
   type      NotificationType
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  priority  NotificationPriority @default(MEDIUM)
+  isRead    Boolean              @default(false)
+  orderId   String?
+  createdAt DateTime             @default(now())
 
   @@index([userId])
   @@map("notification")
+}
+
+model NotificationPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailEnabled Boolean  @default(true)
+  smsEnabled   Boolean  @default(true)
+  inAppEnabled Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("notification_preference")
+}
+
+model NotificationLog {
+  id               String              @id @default(uuid())
+  notificationType NotificationType
+  channel          NotificationChannel
+  provider         String
+  status           NotificationStatus  @default(PENDING)
+  failureReason    String?
+  retryCount       Int                 @default(0)
+  sentAt           DateTime?
+  userId           String
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId          String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([orderId])
+  @@map("notification_log")
 }
 
 model Reschedule {
@@ -316,15 +378,15 @@ model DeliveryAttempt {
 }
 
 model DeliveryProof {
-  id             String   @id @default(uuid())
-  orderId        String   @unique
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  recipientName  String
-  otp            String?
-  signaturePath  String?
-  photoUrl       String?
-  notes          String?
-  timestamp      DateTime @default(now())
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  recipientName String
+  otp           String?
+  signaturePath String?
+  photoUrl      String?
+  notes         String?
+  timestamp     DateTime @default(now())
 
   @@map("delivery_proof")
 }
