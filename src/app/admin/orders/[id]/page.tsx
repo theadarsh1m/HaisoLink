@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { Timeline, TimelineItem } from "@/components/ui/timeline";
 import { MapPin, User, Package, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 
-export default async function AdminOrderDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const order = await db.order.findUnique({
