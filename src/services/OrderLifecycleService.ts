@@ -100,13 +100,9 @@ export class OrderLifecycleService {
         `ORDER_${nextStatus}` as any,
         "MEDIUM",
         {
-          orderId: order.trackingNumber,
+          trackingNumber: order.trackingNumber,
           customerName: order.customer.companyName || "Customer",
           status: nextStatus,
-          time: new Date().toLocaleTimeString(),
-          date: new Date().toLocaleDateString(),
-          location: "Location updated",
-          supportEmail: "support@haisolink.com"
         },
         order.id
       ).catch(err => console.error("Notification Error:", err));
@@ -181,13 +177,9 @@ export class OrderLifecycleService {
         "ORDER_FAILED",
         "HIGH",
         {
-          orderId: orderWithCustomer.trackingNumber,
+          trackingNumber: orderWithCustomer.trackingNumber,
           customerName: "Customer",
-          status: "FAILED",
-          time: new Date().toLocaleTimeString(),
-          date: new Date().toLocaleDateString(),
-          location: reason,
-          supportEmail: "support@haisolink.com"
+          reason,
         },
         orderId
       ).catch(console.error);
@@ -253,13 +245,8 @@ export class OrderLifecycleService {
         "ORDER_DELIVERED",
         "MEDIUM",
         {
-          orderId: orderWithCustomer.trackingNumber,
+          trackingNumber: orderWithCustomer.trackingNumber,
           customerName: "Customer",
-          status: "DELIVERED",
-          time: new Date().toLocaleTimeString(),
-          date: new Date().toLocaleDateString(),
-          location: "Delivery Location",
-          supportEmail: "support@haisolink.com"
         },
         orderId
       ).catch(console.error);
@@ -319,13 +306,10 @@ export class OrderLifecycleService {
         "ORDER_RESCHEDULED",
         "HIGH",
         {
-          orderId: order.trackingNumber,
+          trackingNumber: order.trackingNumber,
           customerName: "Customer",
-          status: "RESCHEDULED",
-          time: new Date().toLocaleTimeString(),
-          date: requestedDate.toLocaleDateString(),
-          location: "See details",
-          supportEmail: "support@haisolink.com"
+          reason,
+          requestedDate: requestedDate.toLocaleDateString(),
         },
         orderId
       ).catch(console.error);

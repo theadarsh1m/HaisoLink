@@ -125,3 +125,144 @@ npm run dev
 Visit [http://localhost:3000](http://localhost:3000) to view the welcome deck landing page.
 
 *Note: For the Leaflet components to render properly without window errors, Next.js dynamic imports with `ssr: false` are utilized extensively across the codebase.*
+
+---
+
+## 🌐 Hosted Application
+
+**Live URL**: [https://haisolink.netlify.app/](https://haisolink.netlify.app/)
+
+---
+
+## Demo Accounts
+
+All demo accounts use the password: **`Password123!`**
+
+| Role           | Email                  | Description             |
+|----------------|------------------------|-------------------------|
+| Customer       | `contact@techcorp.com` | TechCorp Inc. (B2B)     |
+| Customer       | `jane@example.com`     | Jane Smith (Individual) |
+| Delivery Agent | `john@haisolink.com`   | Motorcycle courier      |
+| Delivery Agent | `mike@haisolink.com`   | Van courier             |
+| Delivery Agent | `sarah@haisolink.com`  | Bicycle courier         |
+
+---
+
+## API Documentation
+
+All API routes are under `/api/`. Authentication is handled via session cookies from Better Auth.
+
+### Authentication
+| Method | Endpoint               | Description              |
+|--------|------------------------|--------------------------|
+| POST   | `/api/auth/sign-up`    | Register a new user      |
+| POST   | `/api/auth/sign-in`    | Login and create session |
+| POST   | `/api/auth/sign-out`   | Destroy session          |
+
+### Orders (Customer)
+| Method | Endpoint                             | Description                                          |
+|--------|--------------------------------------|------------------------------------------------------|
+| GET    | `/api/orders`                        | Fetch all orders for the logged-in customer          |
+| POST   | `/api/orders/create`                 | Create a new order with package + location details   |
+| POST   | `/api/orders/calculate-price`        | Compute live pricing before order submission         |
+| POST   | `/api/orders/[id]/reschedule`        | Reschedule a FAILED order with new date + reason     |
+
+### Orders (Agent)
+| Method | Endpoint                             | Description                                          |
+|--------|--------------------------------------|------------------------------------------------------|
+| GET    | `/api/agent/orders?active=true`      | Fetch active dispatches assigned to the agent        |
+| PATCH  | `/api/orders/[id]/status`            | Transition order status (PICKED_UP, DELIVERED, etc.) |
+
+### Orders (Admin)
+| Method | Endpoint                             | Description                                          |
+|--------|--------------------------------------|------------------------------------------------------|
+| GET    | `/api/admin/orders`                  | Fetch all orders system-wide with filters            |
+| GET    | `/api/admin/agents`                  | Fetch all delivery agents with profile data          |
+| GET    | `/api/admin/zones`                   | Fetch all zones with areas                           |
+| POST   | `/api/admin/zones`                   | Create a new zone                                    |
+| POST   | `/api/admin/rate-cards`              | Create/update rate cards for zone pairs              |
+
+### Agent Profile
+| Method | Endpoint                             | Description                                          |
+|--------|--------------------------------------|------------------------------------------------------|
+| PATCH  | `/api/agent/availability`            | Toggle agent status (AVAILABLE/BUSY/OFFLINE/ON_LEAVE)|
+| PATCH  | `/api/agent/location`                | Update agent GPS coordinates                         |
+
+---
+
+## Database Schema
+
+The core data models and their relationships:
+
+```
+User (1) ──── (1) CustomerProfile ──── (*) Order
+  │                                         │
+  └──── (1) DeliveryAgentProfile ───────────┘ (assignedAgent)
+              │
+              └──── (*) AgentAssignment
+
+Zone (1) ──── (*) Area ──── (*) Order (pickup/destination)
+  │
+  └──── (*) RateCard (source/dest zone pairs)
+
+Order (1) ──── (*) TrackingHistory
+  │
+  ├──── (*) DeliveryAttempt
+  ├──── (*) RescheduleRequest
+  └──── (*) DeliveryProof
+
+CODCharge ──── per OrderType surcharge config
+```
+
+### Key Models
+- **User**: Central auth entity with `role` enum (ADMIN, DELIVERY_AGENT, CUSTOMER)
+- **Zone**: Geographic grouping (e.g., "North Delhi", "South Delhi")
+- **Area**: Specific locality with GPS coordinates, mapped to a Zone
+- **RateCard**: Pricing rule per `(sourceZone, destZone, orderType)` pair
+- **CODCharge**: Flat surcharge amount per OrderType for Cash-on-Delivery
+- **Order**: Core entity with full lifecycle status tracking (CREATED → ASSIGNED → PICKED_UP → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED/FAILED)
+- **TrackingHistory**: Immutable audit log of every status transition with actor and timestamp
+
+---
+
+## Rate Calculation Logic
+
+The pricing engine follows this pipeline:
+
+```
+1. RESOLVE AREAS
+   Pickup/Destination coordinates → Nominatim reverse-geocode → Area records → Zone IDs
+
+2. COMPUTE WEIGHT
+   volumetricWeight = (Length × Width × Height) / 5000
+   billableWeight   = max(actualWeight, volumetricWeight)
+
+3. LOOKUP RATE CARD
+   Query RateCard where sourceZoneId + destZoneId + orderType matches
+   shippingCharge = max(pricePerKg × billableWeight, minimumCharge)
+
+4. ADD COD SURCHARGE (if applicable)
+   Query CODCharge for matching orderType
+   totalCharge = shippingCharge + codSurcharge
+
+5. RETURN BREAKDOWN
+   { shippingCharge, CODCharge, totalCharge, billableWeight, volumetricWeight }
+```
+
+This is fully admin-configurable — rate cards and COD surcharges can be updated via the admin panel without any code changes.
+
+---
+
+## Verification Commands
+
+```bash
+# Verify ESLint configurations
+npm run lint
+
+# Type check
+npx tsc --noEmit
+
+# Compile and check production bundle builds
+npm run build
+```
+
