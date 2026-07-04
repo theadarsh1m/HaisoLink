@@ -19,11 +19,15 @@ export const GET = withAuth(async (request, user, { params }) => {
         destinationArea: true,
         assignedAgent: {
           select: {
+            userId: true,
             currentLatitude: true,
             currentLongitude: true,
             user: { select: { fullName: true } },
             vehicleType: true,
           },
+        },
+        customer: {
+          select: { userId: true }
         },
       },
     });
@@ -35,13 +39,13 @@ export const GET = withAuth(async (request, user, { params }) => {
     // Authorization: Admin can view any, Customer can view their own, Agent can view their assigned
     if (
       user.role === "CUSTOMER" &&
-      order.customerId !== user.customerProfile?.id
+      order.customer?.userId !== user.id
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
     if (
       user.role === "DELIVERY_AGENT" &&
-      order.assignedAgentId !== user.deliveryAgentProfile?.id
+      order.assignedAgent?.userId !== user.id
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
