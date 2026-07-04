@@ -12,7 +12,7 @@ export class RateCardRepository {
     });
   }
 
-  async findPricing(sourceZoneId: string, destinationZoneId: string, orderType: Prisma.EnumOrderTypeFilter | "STANDARD" | "EXPRESS") {
+  async findPricing(sourceZoneId: string, destinationZoneId: string, orderType: Prisma.EnumOrderTypeFilter | "B2B" | "B2C") {
     return db.rateCard.findFirst({
       where: {
         sourceZoneId,

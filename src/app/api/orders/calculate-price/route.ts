@@ -15,7 +15,7 @@ const calculateSchema = z.object({
   destLat: z.number(),
   destLng: z.number(),
   destName: z.string().optional().default("Destination"),
-  orderType: z.enum(["STANDARD", "EXPRESS"]),
+  orderType: z.enum(["B2B", "B2C"]),
   paymentType: z.enum(["PREPAID", "COD"]),
   length: z.number().positive(),
   width: z.number().positive(),

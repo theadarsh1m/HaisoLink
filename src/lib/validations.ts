@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const CreateOrderSchema = z.object({
   customerId: z.string().uuid(),
-  orderType: z.enum(["STANDARD", "EXPRESS"]),
+  orderType: z.enum(["B2B", "B2C"]),
   paymentType: z.enum(["PREPAID", "COD"]),
   pickupAreaId: z.string().uuid(),
   destinationAreaId: z.string().uuid(),

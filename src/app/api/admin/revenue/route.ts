@@ -42,8 +42,8 @@ export const GET = withAuth(async (request: Request) => {
 
     orders.forEach((order) => {
       totalRevenue += order.totalCharge;
-      if (order.orderType === "STANDARD") standardRevenue += order.totalCharge;
-      if (order.orderType === "EXPRESS") expressRevenue += order.totalCharge;
+      if (order.orderType === "B2B") standardRevenue += order.totalCharge;
+      if (order.orderType === "B2C") expressRevenue += order.totalCharge;
       if (order.paymentType === "COD") codRevenue += order.totalCharge;
       if (order.paymentType === "PREPAID") prepaidRevenue += order.totalCharge;
     });
@@ -51,8 +51,8 @@ export const GET = withAuth(async (request: Request) => {
     return NextResponse.json({
       totalRevenue,
       splits: {
-        standard: standardRevenue,
-        express: expressRevenue,
+        b2b: standardRevenue,
+        b2c: expressRevenue,
         cod: codRevenue,
         prepaid: prepaidRevenue,
       }

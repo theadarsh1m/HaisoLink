@@ -25,8 +25,8 @@ enum OrderStatus {
 }
 
 enum OrderType {
-  STANDARD
-  EXPRESS
+  B2B
+  B2C
 }
 
 enum PaymentType {

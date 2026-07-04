@@ -137,7 +137,7 @@ async function main() {
         data: {
           sourceZoneId: source.id,
           destinationZoneId: destination.id,
-          orderType: "STANDARD",
+          orderType: "B2B",
           pricePerKg: isIntra ? 2.5 : 5.0,
           minimumCharge: isIntra ? 10.0 : 25.0,
         },
@@ -147,7 +147,7 @@ async function main() {
         data: {
           sourceZoneId: source.id,
           destinationZoneId: destination.id,
-          orderType: "EXPRESS",
+          orderType: "B2C",
           pricePerKg: isIntra ? 5.0 : 10.0,
           minimumCharge: isIntra ? 20.0 : 50.0,
         },
@@ -157,14 +157,14 @@ async function main() {
 
   await db.cODCharge.create({
     data: {
-      orderType: "STANDARD",
+      orderType: "B2B",
       surchargeAmount: 2.0,
     },
   });
 
   await db.cODCharge.create({
     data: {
-      orderType: "EXPRESS",
+      orderType: "B2C",
       surchargeAmount: 5.0,
     },
   });

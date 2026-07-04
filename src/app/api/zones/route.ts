@@ -1,31 +1,38 @@
 import { NextRequest } from "next/server";
-import { successResponse } from "@/utils/api-response";
+import { successResponse, errorResponse } from "@/utils/api-response";
+import { db } from "@/lib/db";
 
 export async function GET() {
-  return successResponse(
-    [
-      {
-        id: "zone-uuid-1",
-        name: "North Zone",
-        description: "North Logistics Area",
+  try {
+    const zones = await db.zone.findMany({
+      include: {
+        areas: true,
       },
-    ],
-    "Zones retrieved successfully"
-  );
+    });
+    return successResponse(zones, "Zones retrieved successfully");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to retrieve zones";
+    return errorResponse(message, null, 500);
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    return successResponse(
-      {
-        id: "zone-uuid-2",
-        ...body,
+    if (!body.name) {
+      return errorResponse("Zone name is required", null, 400);
+    }
+    
+    const newZone = await db.zone.create({
+      data: {
+        name: body.name,
+        description: body.description,
       },
-      "Zone created successfully",
-      201
-    );
-  } catch {
-    return successResponse({}, "Zone created successfully", 201);
+    });
+    
+    return successResponse(newZone, "Zone created successfully", 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create zone";
+    return errorResponse(message, null, 500);
   }
 }

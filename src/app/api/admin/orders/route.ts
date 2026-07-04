@@ -22,6 +22,8 @@ export const GET = withAuth(async (request: Request) => {
     const orderType = searchParams.get("orderType");
     const paymentType = searchParams.get("paymentType");
     const trackingNumber = searchParams.get("trackingNumber");
+    const agentId = searchParams.get("agentId");
+    const zoneId = searchParams.get("zoneId");
     
     // Date Range
     const startDate = searchParams.get("startDate");
@@ -32,6 +34,8 @@ export const GET = withAuth(async (request: Request) => {
       ...(orderType && { orderType: orderType as any }),
       ...(paymentType && { paymentType: paymentType as any }),
       ...(trackingNumber && { trackingNumber: { contains: trackingNumber, mode: "insensitive" } }),
+      ...(agentId && { assignedAgentId: agentId }),
+      ...(zoneId && { pickupArea: { zoneId: zoneId } }),
       ...(startDate && endDate && {
         createdAt: {
           gte: new Date(startDate),

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const codChargeSchema = z.object({
-  orderType: z.enum(["STANDARD", "EXPRESS"], {
-    message: "Order type must be STANDARD or EXPRESS",
+  orderType: z.enum(["B2B", "B2C"], {
+    message: "Order type must be B2B or B2C",
   }),
   surchargeAmount: z.number().nonnegative({ message: "Surcharge amount cannot be negative" }),
 });

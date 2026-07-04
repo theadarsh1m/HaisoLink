@@ -30,7 +30,7 @@ export default function NewOrderPage() {
   const [height, setHeight] = React.useState("20");
   
   // Options State
-  const [orderType, setOrderType] = React.useState<"STANDARD" | "EXPRESS">("STANDARD");
+  const [orderType, setOrderType] = React.useState<"B2B" | "B2C">("B2B");
   const [paymentType, setPaymentType] = React.useState<"PREPAID" | "COD">("PREPAID");
   
   // UI State
@@ -344,18 +344,18 @@ export default function NewOrderPage() {
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                 <div 
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${orderType === "STANDARD" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                  onClick={() => setOrderType("STANDARD")}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${orderType === "B2B" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                  onClick={() => setOrderType("B2B")}
                 >
-                  <h4 className="font-bold">Standard</h4>
-                  <p className="text-sm text-muted-foreground mt-1">2-3 business days</p>
+                  <h4 className="font-bold">B2B</h4>
+                  <p className="text-sm text-muted-foreground mt-1">Business to Business</p>
                 </div>
                 <div 
-                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${orderType === "EXPRESS" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                  onClick={() => setOrderType("EXPRESS")}
+                  className={`border-2 rounded-xl p-4 cursor-pointer transition-all ${orderType === "B2C" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                  onClick={() => setOrderType("B2C")}
                 >
-                  <h4 className="font-bold">Express</h4>
-                  <p className="text-sm text-muted-foreground mt-1">Same day / Next day</p>
+                  <h4 className="font-bold">B2C</h4>
+                  <p className="text-sm text-muted-foreground mt-1">Business to Consumer</p>
                 </div>
               </CardContent>
             </Card>

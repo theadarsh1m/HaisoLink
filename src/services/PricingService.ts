@@ -65,8 +65,7 @@ export class PricingService {
       if (codSetting) {
         CODCharge = codSetting.surchargeAmount;
       } else {
-        // Fallback default
-        CODCharge = 2.0;
+        throw new Error(`COD surcharge is not configured for order type: ${orderType}`);
       }
     }
 
