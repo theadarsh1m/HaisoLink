@@ -23,10 +23,16 @@ export async function POST(request: Request) {
 
     const data = result.data;
 
-    // Check for an existing area within 5km radius
-    const existingAreas = await db.area.findMany();
-    let closestArea = null;
-    let minDistance = 5; // Max 5km radius
+    const existingAreas = await db.area.findMany({
+      where: { zone: { name: { not: "Default Region" } } }
+    });
+    
+    if (existingAreas.length === 0) {
+      return NextResponse.json({ error: "No pricing zones configured" }, { status: 500 });
+    }
+
+    let closestArea = existingAreas[0];
+    let minDistance = calculateDistance(data.latitude, data.longitude, closestArea.latitude, closestArea.longitude);
 
     for (const area of existingAreas) {
       const distance = calculateDistance(data.latitude, data.longitude, area.latitude, area.longitude);
@@ -36,16 +42,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (closestArea) {
+    if (minDistance < 5) {
       return NextResponse.json(closestArea);
-    }
-
-    // If no area found, create a new one. We need a Zone first.
-    let defaultZone = await db.zone.findFirst({ where: { name: "Default Region" } });
-    if (!defaultZone) {
-      defaultZone = await db.zone.create({
-        data: { name: "Default Region", description: "Auto-generated region" },
-      });
     }
 
     const newArea = await db.area.create({
@@ -56,7 +54,7 @@ export async function POST(request: Request) {
         pincode: data.pincode,
         latitude: data.latitude,
         longitude: data.longitude,
-        zoneId: defaultZone.id,
+        zoneId: closestArea.zoneId,
       },
     });
 

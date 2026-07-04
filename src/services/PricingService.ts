@@ -28,16 +28,20 @@ export class PricingService {
     }
 
     // 2. Fetch Rate Card
+    const rateCardQuery = {
+      sourceZoneId: pickupArea.zoneId,
+      destinationZoneId: destinationArea.zoneId,
+      orderType: orderType,
+      isActive: true,
+    };
+    console.log("[PricingService] Querying RateCard with:", rateCardQuery);
+    
     const rateCard = await db.rateCard.findFirst({
-      where: {
-        sourceZoneId: pickupArea.zoneId,
-        destinationZoneId: destinationArea.zoneId,
-        orderType: orderType,
-        isActive: true,
-      },
+      where: rateCardQuery,
     });
 
     if (!rateCard) {
+      console.error("[PricingService] RateCard not found for query:", rateCardQuery);
       throw new Error("No rate card available for this route and order type");
     }
 

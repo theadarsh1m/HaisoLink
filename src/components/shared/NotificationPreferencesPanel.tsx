@@ -73,15 +73,20 @@ export function NotificationPreferencesPanel() {
               <p className="text-xs text-muted-foreground">Receive detailed updates via email.</p>
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={prefs.emailEnabled} 
-              onChange={(e) => setPrefs(prev => ({...prev, emailEnabled: e.target.checked}))} 
-              className="sr-only peer" 
-            />
-            <div className="w-9 h-5 bg-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-          </label>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold w-6 text-right ${prefs.emailEnabled ? 'text-primary' : 'text-muted-foreground'}`}>
+              {prefs.emailEnabled ? "ON" : "OFF"}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={prefs.emailEnabled} 
+                onChange={(e) => setPrefs(prev => ({...prev, emailEnabled: e.target.checked}))} 
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 border border-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
         </div>
         
         <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-secondary/10">
@@ -92,15 +97,20 @@ export function NotificationPreferencesPanel() {
               <p className="text-xs text-muted-foreground">Instant alerts on your mobile number.</p>
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={prefs.smsEnabled} 
-              onChange={(e) => setPrefs(prev => ({...prev, smsEnabled: e.target.checked}))} 
-              className="sr-only peer" 
-            />
-            <div className="w-9 h-5 bg-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-          </label>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold w-6 text-right ${prefs.smsEnabled ? 'text-primary' : 'text-muted-foreground'}`}>
+              {prefs.smsEnabled ? "ON" : "OFF"}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={prefs.smsEnabled} 
+                onChange={(e) => setPrefs(prev => ({...prev, smsEnabled: e.target.checked}))} 
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 border border-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
         </div>
         
         <div className="flex items-center justify-between p-3 rounded-lg border border-border/40 bg-secondary/10">
@@ -111,15 +121,20 @@ export function NotificationPreferencesPanel() {
               <p className="text-xs text-muted-foreground">Bell alerts in your dashboard.</p>
             </div>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={prefs.inAppEnabled} 
-              onChange={(e) => setPrefs(prev => ({...prev, inAppEnabled: e.target.checked}))} 
-              className="sr-only peer" 
-            />
-            <div className="w-9 h-5 bg-secondary peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-          </label>
+          <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold w-6 text-right ${prefs.inAppEnabled ? 'text-primary' : 'text-muted-foreground'}`}>
+              {prefs.inAppEnabled ? "ON" : "OFF"}
+            </span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={prefs.inAppEnabled} 
+                onChange={(e) => setPrefs(prev => ({...prev, inAppEnabled: e.target.checked}))} 
+                className="sr-only peer" 
+              />
+              <div className="w-11 h-6 bg-slate-200 dark:bg-slate-700 border border-border peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
         </div>
       </div>
       

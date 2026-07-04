@@ -1,82 +1,152 @@
 import { db } from "@/lib/db";
-import { NotificationType, NotificationChannel, NotificationPriority } from "@prisma/client";
-import { INotificationProvider } from "./notifications/INotificationProvider";
-import { EmailProvider } from "./notifications/EmailProvider";
-import { SMSProvider } from "./notifications/SMSProvider";
-import { InAppProvider } from "./notifications/InAppProvider";
-import { NotificationTemplates, TemplateContext } from "./notifications/NotificationTemplates";
+import { NotificationType, NotificationStatus } from "@prisma/client";
+import { EmailProvider } from "@/providers/EmailProvider";
+import { BrevoProvider } from "@/providers/BrevoProvider";
+import { logger } from "@/utils/logger";
+import * as emailTemplates from "@/utils/emailTemplates";
 
 export class NotificationService {
-  private providers: Record<string, INotificationProvider>;
+  private emailProvider: EmailProvider;
   private maxRetries = 3;
 
-  constructor() {
-    this.providers = {
-      EMAIL: new EmailProvider(),
-      SMS: new SMSProvider(),
-      IN_APP: new InAppProvider(),
-    };
+  constructor(provider?: EmailProvider) {
+    this.emailProvider = provider || new BrevoProvider();
   }
 
-  async dispatchEvent(
-    userId: string,
-    type: NotificationType,
-    priority: NotificationPriority,
-    context: TemplateContext,
-    orderId?: string
-  ): Promise<void> {
-    const user = await db.user.findUnique({
-      where: { id: userId },
-      include: { notificationPreference: true },
-    });
+  // Individual Email Dispatchers
 
-    if (!user) {
-      console.warn(`[NotificationService] User ${userId} not found.`);
-      return;
-    }
-
-    const prefs = user.notificationPreference || {
-      emailEnabled: true,
-      smsEnabled: true,
-      inAppEnabled: true,
-    };
-
-    const template = NotificationTemplates.resolve(type, context);
-
-    const channelsToSend: { channel: NotificationChannel; to: string }[] = [];
-
-    if (prefs.emailEnabled && user.email) {
-      channelsToSend.push({ channel: "EMAIL", to: user.email });
-    }
-    if (prefs.smsEnabled && user.phoneNumber) {
-      channelsToSend.push({ channel: "SMS", to: user.phoneNumber });
-    }
-    if (prefs.inAppEnabled) {
-      channelsToSend.push({ channel: "IN_APP", to: user.id });
-    }
-
-    for (const { channel, to } of channelsToSend) {
-      this.sendWithRetry(channel, to, userId, type, priority, template.title, template.message, orderId).catch((err) => {
-        console.error(`[NotificationService] Failed background send for ${channel}:`, err);
+  async sendOrderCreated(order: any, customer: any) {
+    await this.dispatch("ORDER_CREATED", customer, order, async () => {
+      return await emailTemplates.renderOrderCreatedHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        pickupAddress: order.pickupArea?.areaName || "N/A",
+        destinationAddress: order.destinationArea?.areaName || "N/A",
+        weight: `${Math.max(order.actualWeight, order.volumetricWeight || 0)} kg`,
+        totalCharges: `₹${order.totalCharge}`,
+        orderDate: order.createdAt?.toLocaleDateString() || new Date().toLocaleDateString(),
       });
+    }, "Your Order Has Been Created");
+  }
+
+  async sendOrderAssigned(order: any, customer: any, agent: any) {
+    await this.dispatch("ORDER_ASSIGNED", customer, order, async () => {
+      return await emailTemplates.renderOrderAssignedHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        agentName: agent.user?.name || "Delivery Agent",
+        vehicleType: agent.vehicleType || "Vehicle",
+        estimatedPickupTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+      });
+    }, "Order Assigned to Courier");
+  }
+
+  async sendPickedUp(order: any, customer: any) {
+    await this.dispatch("ORDER_PICKED_UP", customer, order, async () => {
+      return await emailTemplates.renderPickedUpHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+      });
+    }, "Order Picked Up");
+  }
+
+  async sendInTransit(order: any, customer: any) {
+    await this.dispatch("ORDER_IN_TRANSIT", customer, order, async () => {
+      return await emailTemplates.renderInTransitHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+      });
+    }, "Order In Transit");
+  }
+
+  async sendOutForDelivery(order: any, customer: any, agent: any) {
+    await this.dispatch("ORDER_OUT_FOR_DELIVERY", customer, order, async () => {
+      return await emailTemplates.renderOutForDeliveryHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        estimatedArrival: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString(),
+        agentName: agent?.user?.name || "Courier",
+        contactNumber: agent?.user?.phoneNumber || "N/A",
+      });
+    }, "Order Out For Delivery");
+  }
+
+  async sendDelivered(order: any, customer: any, proof: any) {
+    await this.dispatch("ORDER_DELIVERED", customer, order, async () => {
+      return await emailTemplates.renderDeliveredHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        deliveryTime: new Date().toLocaleTimeString(),
+        recipientName: proof.recipientName,
+        deliveryNotes: proof.notes || "",
+      });
+    }, "Order Delivered Successfully");
+  }
+
+  async sendDeliveryFailed(order: any, customer: any, reason: string, notes?: string) {
+    await this.dispatch("ORDER_FAILED", customer, order, async () => {
+      return await emailTemplates.renderDeliveryFailedHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        failureReason: reason,
+        agentNotes: notes,
+      });
+    }, "Delivery Attempt Failed");
+  }
+
+  async sendRescheduled(order: any, customer: any, newDate: Date) {
+    await this.dispatch("ORDER_RESCHEDULED", customer, order, async () => {
+      return await emailTemplates.renderRescheduledHtml({
+        customerName: customer.companyName || customer.user?.name || "Customer",
+        trackingNumber: order.trackingNumber,
+        newDeliveryDate: newDate.toLocaleDateString(),
+      });
+    }, "Delivery Rescheduled");
+  }
+
+
+  /**
+   * Core dispatcher handling user lookup, HTML generation, and retries.
+   */
+  private async dispatch(
+    type: NotificationType, 
+    customer: any, 
+    order: any, 
+    renderHtml: () => Promise<string>,
+    subject: string
+  ) {
+    try {
+      const user = customer?.user;
+      if (!user?.email) {
+        logger.warn(`No email address found for customer ID: ${customer?.id}. Skipping email.`);
+        return;
+      }
+
+      // Generate HTML from React Email
+      const html = await renderHtml();
+
+      // Execute send with retry logic in background to prevent blocking order flow
+      this.sendWithRetry(user.id, user.email, subject, html, type, order.id).catch((err) => {
+        logger.error(`[NotificationService] Uncaught background error: ${err.message}`);
+      });
+
+    } catch (err: any) {
+      // Catch any template rendering or user fetching errors gracefully
+      logger.error(`[NotificationService] Failed to prepare email ${type} for order ${order?.id}: ${err.message}`);
     }
   }
 
+  /**
+   * Resilient send implementation with exponential backoff retries.
+   */
   private async sendWithRetry(
-    channel: NotificationChannel,
-    to: string,
     userId: string,
+    to: string,
+    subject: string,
+    html: string,
     type: NotificationType,
-    priority: NotificationPriority,
-    title: string,
-    message: string,
     orderId?: string
   ) {
-    const provider = this.providers[channel];
-    if (!provider) return;
-
-    const payload = { userId, type, priority, title, message, orderId };
-    
     let attempt = 0;
     let success = false;
     let lastError = "";
@@ -84,35 +154,43 @@ export class NotificationService {
     while (attempt < this.maxRetries && !success) {
       attempt++;
       try {
-        success = await provider.send(payload, to);
-        if (!success) lastError = "Provider returned false";
-      } catch (error: unknown) {
+        await this.emailProvider.sendEmail({ to, subject, html });
+        success = true;
+      } catch (error: any) {
         success = false;
-        if (error instanceof Error) {
-          lastError = error.message;
-        } else {
-          lastError = "Unknown error";
+        lastError = error.message || "Unknown error";
+        logger.warn(`[NotificationService] Attempt ${attempt} failed for ${type} to ${to}: ${lastError}`);
+        
+        if (attempt < this.maxRetries) {
+          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
-      }
-
-      if (!success && attempt < this.maxRetries) {
-        const delay = Math.pow(2, attempt) * 100;
-        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
-    await db.notificationLog.create({
-      data: {
-        userId,
-        orderId,
-        notificationType: type,
-        channel,
-        provider: provider.name,
-        status: success ? "SENT" : "FAILED",
-        failureReason: success ? null : lastError,
-        retryCount: attempt - 1,
-        sentAt: success ? new Date() : null,
-      },
-    });
+    if (success) {
+      logger.info(`[NotificationService] Successfully sent ${type} email to ${to} for order ${orderId}`);
+    } else {
+      logger.error(`[NotificationService] Permanently failed to send ${type} email to ${to} after ${this.maxRetries} attempts. Reason: ${lastError}`);
+    }
+
+    // Persist to database history
+    try {
+      await db.notificationLog.create({
+        data: {
+          userId,
+          orderId,
+          notificationType: type,
+          channel: "EMAIL",
+          provider: "Brevo",
+          status: success ? NotificationStatus.SENT : NotificationStatus.FAILED,
+          failureReason: success ? null : lastError,
+          retryCount: attempt - 1,
+          sentAt: success ? new Date() : null,
+        },
+      });
+    } catch (dbError: any) {
+      logger.error(`[NotificationService] Failed to log notification to database: ${dbError.message}`);
+    }
   }
 }

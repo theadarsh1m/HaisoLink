@@ -360,7 +360,7 @@ export default function NewOrderPage() {
               </CardContent>
             </Card>
 
-            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <Button variant="outline" className="w-full rounded-xl h-12" onClick={() => setStep("LOCATION")}>Back</Button>
               <Button className="w-full font-bold rounded-xl h-12 shadow-lg" onClick={() => setStep("CONFIRM")}>Continue to Checkout <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </div>
@@ -440,7 +440,7 @@ export default function NewOrderPage() {
               </CardContent>
             </Card>
 
-            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <Button variant="outline" className="w-full rounded-xl h-12" onClick={() => setStep("DETAILS")} disabled={isSubmitting}>Back</Button>
               <Button 
                 className="w-full font-bold rounded-xl h-12 shadow-lg" 

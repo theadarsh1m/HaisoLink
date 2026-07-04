@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-middleware";
 import { db } from "@/lib/db";
 import { z } from "zod";
+import { NotificationService } from "@/services/NotificationService";
 
 const orderSchema = z.object({
   pickupAreaId: z.string().min(1),
@@ -33,15 +34,18 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
-    const customerProfile = await db.customerProfile.findUnique({
+    let customerProfile = await db.customerProfile.findUnique({
       where: { userId: user.id },
     });
 
     if (!customerProfile) {
-      return NextResponse.json(
-        { error: "Customer profile not found" },
-        { status: 404 }
-      );
+      // Lazily create profile if missing (e.g. they registered via OAuth)
+      customerProfile = await db.customerProfile.create({
+        data: {
+          userId: user.id,
+          defaultAddress: "",
+        },
+      });
     }
 
     const trackingNumber = `HL-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -74,7 +78,21 @@ export const POST = withAuth(async (request, user) => {
           },
         },
       },
+      include: {
+        pickupArea: true,
+        destinationArea: true,
+      }
     });
+
+    // Send email notification in the background
+    try {
+      const notificationService = new NotificationService();
+      // Attach user from session to the customer profile for the email service
+      (customerProfile as any).user = user;
+      await notificationService.sendOrderCreated(order, customerProfile);
+    } catch (notificationError) {
+      console.error("Failed to trigger order creation email:", notificationError);
+    }
 
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

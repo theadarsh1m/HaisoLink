@@ -24,9 +24,17 @@ const calculateSchema = z.object({
 });
 
 async function resolveOrCreateArea(lat: number, lng: number, name: string) {
-  const existingAreas = await db.area.findMany();
-  let closestArea = null;
-  let minDistance = 5;
+  const existingAreas = await db.area.findMany({
+    where: {
+      zone: {
+        name: { not: "Default Region" }
+      }
+    }
+  });
+  if (existingAreas.length === 0) throw new Error("No pricing zones configured");
+
+  let closestArea = existingAreas[0];
+  let minDistance = calculateDistance(lat, lng, closestArea.latitude, closestArea.longitude);
 
   for (const area of existingAreas) {
     const distance = calculateDistance(lat, lng, area.latitude, area.longitude);
@@ -36,24 +44,20 @@ async function resolveOrCreateArea(lat: number, lng: number, name: string) {
     }
   }
 
-  if (closestArea) return closestArea.id;
+  // If extremely close (within 5km), reuse the exact same area ID
+  if (minDistance < 5) return closestArea.id;
 
-  let defaultZone = await db.zone.findFirst({ where: { name: "Default Region" } });
-  if (!defaultZone) {
-    defaultZone = await db.zone.create({
-      data: { name: "Default Region", description: "Auto-generated region" },
-    });
-  }
-
+  // Otherwise, create a new Area but attach it to the closest Zone
+  // This guarantees that a RateCard will always exist for the routing
   const newArea = await db.area.create({
     data: {
       areaName: name,
-      city: "",
-      state: "",
-      pincode: "",
+      city: "Auto-Mapped Location",
+      state: "Auto",
+      pincode: "000000",
       latitude: lat,
       longitude: lng,
-      zoneId: defaultZone.id,
+      zoneId: closestArea.zoneId,
     },
   });
 

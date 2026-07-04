@@ -37,7 +37,11 @@ export class OrderLifecycleService {
   ): Promise<boolean> {
     const order = await db.order.findUnique({
       where: { id: orderId },
-      include: { customer: true },
+      include: { 
+        customer: { include: { user: true } },
+        pickupArea: true,
+        destinationArea: true,
+      },
     });
 
     if (!order) {
@@ -95,17 +99,30 @@ export class OrderLifecycleService {
     if (order.customer && order.customer.userId) {
       const { NotificationService } = await import("./NotificationService");
       const notificationService = new NotificationService();
-      notificationService.dispatchEvent(
-        order.customer.userId,
-        `ORDER_${nextStatus}` as any,
-        "MEDIUM",
-        {
-          trackingNumber: order.trackingNumber,
-          customerName: order.customer.companyName || "Customer",
-          status: nextStatus,
-        },
-        order.id
-      ).catch(err => console.error("Notification Error:", err));
+      
+      switch(nextStatus) {
+        case "CREATED":
+          notificationService.sendOrderCreated(order, order.customer).catch(err => console.error(err));
+          break;
+        case "PICKED_UP":
+          notificationService.sendPickedUp(order, order.customer).catch(err => console.error(err));
+          break;
+        case "IN_TRANSIT":
+          notificationService.sendInTransit(order, order.customer).catch(err => console.error(err));
+          break;
+        case "OUT_FOR_DELIVERY":
+          if (order.assignedAgentId) {
+            const agent = await db.deliveryAgentProfile.findUnique({ where: { id: order.assignedAgentId }, include: { user: true }});
+            notificationService.sendOutForDelivery(order, order.customer, agent).catch(err => console.error(err));
+          }
+          break;
+        case "ASSIGNED":
+          if (order.assignedAgentId) {
+            const agent = await db.deliveryAgentProfile.findUnique({ where: { id: order.assignedAgentId }, include: { user: true }});
+            notificationService.sendOrderAssigned(order, order.customer, agent).catch(err => console.error(err));
+          }
+          break;
+      }
     }
 
     return true;
@@ -168,20 +185,15 @@ export class OrderLifecycleService {
       );
     });
 
-    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: { include: { user: true } } } });
     if (orderWithCustomer?.customer?.userId) {
       const { NotificationService } = await import("./NotificationService");
       const notificationService = new NotificationService();
-      notificationService.dispatchEvent(
-        orderWithCustomer.customer.userId,
-        "ORDER_FAILED",
-        "HIGH",
-        {
-          trackingNumber: orderWithCustomer.trackingNumber,
-          customerName: "Customer",
-          reason,
-        },
-        orderId
+      notificationService.sendDeliveryFailed(
+        orderWithCustomer, 
+        orderWithCustomer.customer, 
+        reason, 
+        notes
       ).catch(console.error);
     }
 
@@ -236,19 +248,14 @@ export class OrderLifecycleService {
       );
     });
 
-    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: true } });
+    const orderWithCustomer = await db.order.findUnique({ where: { id: orderId }, include: { customer: { include: { user: true } } } });
     if (orderWithCustomer?.customer?.userId) {
       const { NotificationService } = await import("./NotificationService");
       const notificationService = new NotificationService();
-      notificationService.dispatchEvent(
-        orderWithCustomer.customer.userId,
-        "ORDER_DELIVERED",
-        "MEDIUM",
-        {
-          trackingNumber: orderWithCustomer.trackingNumber,
-          customerName: "Customer",
-        },
-        orderId
+      notificationService.sendDelivered(
+        orderWithCustomer,
+        orderWithCustomer.customer,
+        proof
       ).catch(console.error);
     }
 
@@ -264,7 +271,7 @@ export class OrderLifecycleService {
   ): Promise<boolean> {
     const order = await db.order.findUnique({
       where: { id: orderId },
-      include: { customer: true },
+      include: { customer: { include: { user: true } } },
     });
 
     if (!order) {
@@ -301,17 +308,10 @@ export class OrderLifecycleService {
 
     // Trigger RESCHEDULED notification
     if (order.customer?.userId) {
-      notificationService.dispatchEvent(
-        order.customer.userId,
-        "ORDER_RESCHEDULED",
-        "HIGH",
-        {
-          trackingNumber: order.trackingNumber,
-          customerName: "Customer",
-          reason,
-          requestedDate: requestedDate.toLocaleDateString(),
-        },
-        orderId
+      notificationService.sendRescheduled(
+        order,
+        order.customer,
+        requestedDate
       ).catch(console.error);
     }
 
